@@ -14,11 +14,15 @@ admin_bp = Blueprint("admin", __name__)
 def dashboard():
     users = User.query.all()
     stats = {}
+    total_files = 0
+    total_size = 0  # 单位：字节
 
+    # 计算作业数据
     for u in users:
         if not u.is_admin:
             hw_list: list[Homework] = Homework.query.filter_by(
                 user_id=u.id).all()
+            total_files += len(hw_list)  # 累加文件总数
             for h in hw_list:
                 h.name = get_homework_name(h.homework_number)
             stats[u.id] = {
@@ -28,7 +32,24 @@ def dashboard():
                 "homeworks": hw_list,
             }
 
-    return render_template("admin_dashboard.html", user_stats=stats)
+    # 计算目录总大小
+    upload_dir = current_app.config["UPLOAD_FOLDER"]
+    if os.path.exists(upload_dir):
+        for sid in os.listdir(upload_dir):
+            for f in os.listdir(os.path.join(upload_dir, sid)):
+                fp = os.path.join(upload_dir, sid, f)
+                if os.path.isfile(fp):
+                    total_size += os.path.getsize(fp)
+
+    # 将字节转换为易读的格式 (MB)
+    size_in_mb = round(total_size / (1024 * 1024), 2)
+
+    return render_template(
+        "admin_dashboard.html",
+        user_stats=stats,
+        total_files=total_files,
+        total_size=size_in_mb
+    )
 
 
 @admin_bp.route("/admin/download/<int:homework_id>")

@@ -5,17 +5,46 @@
 {% block content %}
 <div class="container-fluid px-0">
     <div class="row justify-content-center g-4 mb-5">
-        <div class="col-md-5 col-lg-4">
-            <div class="card border-0 shadow-sm p-4 transition-all">
-                <div class="d-flex align-items-center justify-content-center">
+        <div class="col-md-4 col-lg-3">
+            <div class="card border-0 shadow-sm p-3 transition-all">
+                <div class="d-flex align-items-center">
                     <div class="flex-shrink-0 bg-primary bg-opacity-10 p-3 rounded-3 text-primary">
-                        <i class="ph-bold ph-users-three fs-2"></i>
+                        <i class="ph-bold ph-users-three fs-3"></i>
                     </div>
-                    <div class="ms-4">
-                        <h6 class="text-muted mb-1 text-uppercase small fw-bold" style="letter-spacing: 1px;">注册学生总数
-                        </h6>
-                        <h2 class="fw-bold mb-0 text-dark">{{ user_stats|length }} <span
-                                class="fs-6 fw-normal text-muted">人</span></h2>
+                    <div class="ms-3">
+                        <h6 class="text-muted mb-1 small fw-bold text-uppercase">学生总数</h6>
+                        <h3 class="fw-bold mb-0 text-dark">{{ user_stats|length }} <span
+                                class="fs-6 fw-normal text-muted">人</span></h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="card border-0 shadow-sm p-3 transition-all">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-success bg-opacity-10 p-3 rounded-3 text-success">
+                        <i class="ph-bold ph-file-arrow-up fs-3"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="text-muted mb-1 small fw-bold text-uppercase">提交文件</h6>
+                        <h3 class="fw-bold mb-0 text-dark">{{ total_files }} <span
+                                class="fs-6 fw-normal text-muted">份</span></h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <div class="card border-0 shadow-sm p-3 transition-all">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-warning bg-opacity-10 p-3 rounded-3 text-warning">
+                        <i class="ph-bold ph-hard-drive fs-3"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="text-muted mb-1 small fw-bold text-uppercase">存储占用</h6>
+                        <h3 class="fw-bold mb-0 text-dark">{{ total_size }} <span
+                                class="fs-6 fw-normal text-muted">MB</span></h3>
                     </div>
                 </div>
             </div>
@@ -30,12 +59,13 @@
             </div>
             <div class="input-group" style="max-width: 250px;">
                 <span class="input-group-text bg-light border-0"><i class="ph ph-magnifying-glass"></i></span>
-                <input type="text" class="form-control bg-light border-0 small" placeholder="搜索学生姓名...">
+                <input type="text" id="studentSearch" class="form-control bg-light border-0 small"
+                    placeholder="搜索学生姓名...">
             </div>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0" id="studentTable">
                     <thead class="bg-light text-muted">
                         <tr>
                             <th class="ps-4 py-3 border-0">#</th>
@@ -54,7 +84,7 @@
                                 <div class="d-flex align-items-center">
                                     <div class="avatar-circle me-3 shadow-sm">{{ user_info.username[0] }}</div>
                                     <div>
-                                        <div class="fw-bold text-dark">{{ user_info.username }}</div>
+                                        <div class="fw-bold text-dark user-name">{{ user_info.username }}</div>
                                         <div class="text-muted small">{{ user_info.email }}</div>
                                     </div>
                                 </div>
@@ -94,9 +124,65 @@
 </div>
 
 {% for user_id, user_info in user_stats.items() %}
+{% if user_info.homeworks %}
+<div class="modal fade" id="homeworkModal{{ user_id }}" tabindex="-1" aria-labelledby="modalLabel{{ user_id }}"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0 bg-light p-4">
+                <h5 class="modal-title fw-bold" id="modalLabel{{ user_id }}">
+                    <i class="ph-bold ph-folder-open me-2 text-primary"></i>
+                    {{ user_info.username }} 的作业记录
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead class="small text-uppercase text-muted">
+                            <tr>
+                                <th>作业项</th>
+                                <th>文件名</th>
+                                <th>提交时间</th>
+                                <th class="text-end">管理</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for homework in user_info.homeworks %}
+                            <tr>
+                                <td class="fw-bold text-dark">{{ homework.name }}</td>
+                                <td class="text-muted small">{{ homework.file_name }}</td>
+                                <td class="small">{{ homework.submit_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td class="text-end">
+                                    <div class="btn-group shadow-sm rounded">
+                                        <a href="{{ url_for('admin.download', homework_id=homework.id) }}"
+                                            class="btn btn-white btn-sm border text-success" title="下载">
+                                            <i class="ph ph-download-simple"></i>
+                                        </a>
+                                        <a href="{{ url_for('admin.delete', homework_id=homework.id) }}"
+                                            class="btn btn-white btn-sm border text-danger"
+                                            onclick="return confirm('确定要删除这份作业吗？')" title="删除">
+                                            <i class="ph ph-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endfor %}
 
 <style>
+    /* 统计卡片悬停效果 */
     .transition-all {
         transition: all 0.3s ease;
     }
@@ -106,6 +192,7 @@
         box-shadow: 0 1rem 3rem rgba(0, 0, 0, .1) !important;
     }
 
+    /* 现代感标签颜色 */
     .bg-soft-primary {
         background-color: rgba(79, 70, 229, 0.1);
     }
@@ -114,6 +201,7 @@
         background-color: #f3f4f6;
     }
 
+    /* 头像装饰 */
     .avatar-circle {
         width: 40px;
         height: 40px;
@@ -126,5 +214,30 @@
         font-weight: 600;
         font-size: 1rem;
     }
+
+    /* 按钮样式微调 */
+    .btn-white {
+        background-color: #fff;
+    }
+
+    .btn-white:hover {
+        background-color: #f8f9fa;
+    }
 </style>
+
+<script>
+    document.getElementById('studentSearch').addEventListener('keyup', function () {
+        let filter = this.value.toLowerCase();
+        let rows = document.querySelectorAll('#studentTable tbody tr');
+
+        rows.forEach(row => {
+            let name = row.querySelector('.user-name').textContent.toLowerCase();
+            if (name.includes(filter)) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    });
+</script>
 {% endblock %}
