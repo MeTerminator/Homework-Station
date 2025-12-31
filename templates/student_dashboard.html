@@ -1,66 +1,144 @@
 {% extends "base.html" %}
 
-{% block title %}学生面板 - 作业提交{% endblock %}
+{% block title %}学生个人中心 - 作业提交系统{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header bg-primary text-white">
-        <h2 class="text-center">作业提交</h2>
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 border-0">
+                <h5 class="fw-bold mb-0 d-flex align-items-center">
+                    <i class="ph-bold ph-upload-simple me-2 text-primary"></i> 提交新作业
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('student.submit') }}" enctype="multipart/form-data"
+                    id="uploadForm">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small text-uppercase text-muted">选择作业批次</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0"><i class="ph ph-list-numbers"></i></span>
+                            {{ form.homework_number(class="form-select bg-light border-0") }}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small text-uppercase text-muted">上传附件</label>
+                        <div class="upload-area p-4 border border-2 border-dashed rounded-3 text-center bg-light transition-all"
+                            id="dropZone">
+                            <i class="ph ph-cloud-arrow-up fs-1 text-primary mb-2"></i>
+                            <p class="small text-muted mb-2">点击或将文件拖拽至此</p>
+                            {{ form.file(class="form-control form-control-sm", id="fileInput") }}
+                        </div>
+                        <div id="file-name-display" class="mt-2 small text-primary fw-medium text-center"></div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm">
+                            <i class="ph-bold ph-paper-plane-tilt me-2"></i> 确认提交
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-    <div class="card-body">
-        <form method="POST" action="{{ url_for('student.submit') }}" enctype="multipart/form-data">
-            {{ form.hidden_tag() }}
-            
-            <div class="mb-3">
-                {{ form.homework_number.label(class="form-label") }}
-                {{ form.homework_number(class="form-select") }}
+
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 d-flex align-items-center">
+                    <i class="ph-bold ph-clock-counter-clockwise me-2 text-primary"></i> 提交记录
+                </h5>
+                {% if homeworks %}
+                <span class="badge bg-soft-primary text-primary rounded-pill px-3">已完成 {{ homeworks|length }} 份</span>
+                {% endif %}
             </div>
-            
-            <div class="mb-3">
-                {{ form.file.label(class="form-label") }}
-                {{ form.file(class="form-control") }}
+            <div class="card-body {% if not homeworks %}d-flex align-items-center justify-content-center{% endif %}">
+                {% if homeworks %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr class="small text-muted text-uppercase">
+                                <th class="ps-3 border-0">作业项</th>
+                                <th class="border-0">文件名称</th>
+                                <th class="border-0">提交时间</th>
+                                <th class="text-end pe-3 border-0">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for homework in homeworks %}
+                            <tr>
+                                <td class="ps-3 border-0 fw-bold text-dark">{{ homework.name }}</td>
+                                <td class="border-0 small">
+                                    <i class="ph ph-file-text me-1"></i> {{ homework.file_name }}
+                                </td>
+                                <td class="border-0 text-muted small">
+                                    {{ homework.submit_time.strftime('%Y-%m-%d %H:%M') }}
+                                </td>
+                                <td class="text-end pe-3 border-0">
+                                    <a href="{{ url_for('student.download', homework_id=homework.id) }}"
+                                        class="btn btn-light btn-sm rounded-circle shadow-sm" title="下载文件">
+                                        <i class="ph ph-download-simple"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="ph ph-folder-open text-muted" style="font-size: 4rem;"></i>
+                    <p class="text-muted mt-3">你还没有提交过任何作业，快去上传吧！</p>
+                </div>
+                {% endif %}
             </div>
-            
-            <div class="d-grid gap-2">
-                {{ form.submit(class="btn btn-primary btn-lg") }}
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
-<div class="card mt-5">
-    <div class="card-header bg-secondary text-white">
-        <h3 class="text-center">已提交的作业</h3>
-    </div>
-    <div class="card-body">
-        {% if homeworks %}
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover">
-                    <thead>
-                        <tr>
-                            <th>作业选项</th>
-                            <th>文件名</th>
-                            <th>提交时间</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for homework in homeworks %}
-                        <tr>
-                            <td>{{ homework.name }}</td>
-                            <td>{{ homework.file_name }}</td>
-                            <td>{{ homework.submit_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                            <td>
-                                <a href="{{ url_for('student.download', homework_id=homework.id) }}" class="btn btn-success btn-sm">下载</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <p class="text-center text-muted">您还没有提交任何作业</p>
-        {% endif %}
-    </div>
-</div>
+<style>
+    /* 自定义上传区域样式 */
+    .upload-area {
+        cursor: pointer;
+        position: relative;
+    }
+
+    .upload-area:hover {
+        border-color: var(--primary-color) !important;
+        background-color: #f0f0ff !important;
+    }
+
+    #fileInput {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .bg-soft-primary {
+        background-color: rgba(79, 70, 229, 0.1);
+    }
+
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(79, 70, 229, 0.02);
+    }
+</style>
+
+<script>
+    // 简单的文件名预览逻辑
+    document.getElementById('fileInput').addEventListener('change', function (e) {
+        var fileName = e.target.files[0].name;
+        document.getElementById('file-name-display').innerHTML = '<i class="ph ph-check-circle me-1"></i> 已选择: ' + fileName;
+    });
+</script>
 {% endblock %}

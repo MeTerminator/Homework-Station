@@ -1,5 +1,12 @@
 # Homework Station
 
+# Default Admin Account
+
+StudentId: `00000000`
+Username: `admin`
+Email: `admin@example.com`
+Password: `admin`
+
 # How to use
 
 1. Copy `.env.example` to `.env` and fill in the necessary values.

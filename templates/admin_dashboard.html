@@ -1,99 +1,130 @@
 {% extends "base.html" %}
 
-{% block title %}管理员面板 - 作业提交{% endblock %}
+{% block title %}管理员后台 - 作业提交系统{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header bg-primary text-white">
-        <h2 class="text-center">作业提交统计</h2>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover">
-                <thead>
-                    <tr>
-                        <th>序号</th>
-                        <th>姓名</th>
-                        <th>学号</th>
-                        <th>邮箱</th>
-                        <th>作业提交次数</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% set ns = namespace(counter=1) %}
-                    {% for user_id, user_info in user_stats.items() %}
-                    <tr>
-                        <td>{{ ns.counter }}</td>
-                        <td>{{ user_info.username }}</td>
-                        <td>{{ user_info.student_id }}</td>
-                        <td>{{ user_info.email }}</td>
-                        <td>{{ user_info.homeworks|length if user_info.homeworks else 0 }}</td>
-                        <td>
-                            {% if user_info.homeworks %}
-                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#homeworkModal{{ user_id }}">
-                                查看详情
-                            </button>
-                            {% else %}
-                            <span class="text-muted">未提交作业</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% set ns.counter = ns.counter + 1 %}
-                    {% endfor %}
-                </tbody>
-            </table>
+<div class="container-fluid px-0">
+    <div class="row justify-content-center g-4 mb-5">
+        <div class="col-md-5 col-lg-4">
+            <div class="card border-0 shadow-sm p-4 transition-all">
+                <div class="d-flex align-items-center justify-content-center">
+                    <div class="flex-shrink-0 bg-primary bg-opacity-10 p-3 rounded-3 text-primary">
+                        <i class="ph-bold ph-users-three fs-2"></i>
+                    </div>
+                    <div class="ms-4">
+                        <h6 class="text-muted mb-1 text-uppercase small fw-bold" style="letter-spacing: 1px;">注册学生总数
+                        </h6>
+                        <h2 class="fw-bold mb-0 text-dark">{{ user_stats|length }} <span
+                                class="fs-6 fw-normal text-muted">人</span></h2>
+                    </div>
+                </div>
+            </div>
         </div>
-        
-        {% if not user_stats %}
-            <p class="text-center text-muted">暂无用户信息</p>
-        {% endif %}
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-4 d-flex justify-content-between align-items-center border-0">
+            <div>
+                <h4 class="fw-bold mb-1">作业提交统计</h4>
+                <p class="text-muted small mb-0">管理所有学生的作业提交状态与文件下载</p>
+            </div>
+            <div class="input-group" style="max-width: 250px;">
+                <span class="input-group-text bg-light border-0"><i class="ph ph-magnifying-glass"></i></span>
+                <input type="text" class="form-control bg-light border-0 small" placeholder="搜索学生姓名...">
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted">
+                        <tr>
+                            <th class="ps-4 py-3 border-0">#</th>
+                            <th class="border-0">学生信息</th>
+                            <th class="border-0">学号</th>
+                            <th class="border-0">提交进度</th>
+                            <th class="text-end pe-4 border-0">管理操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set ns = namespace(counter=1) %}
+                        {% for user_id, user_info in user_stats.items() %}
+                        <tr>
+                            <td class="ps-4 text-muted">{{ ns.counter }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle me-3 shadow-sm">{{ user_info.username[0] }}</div>
+                                    <div>
+                                        <div class="fw-bold text-dark">{{ user_info.username }}</div>
+                                        <div class="text-muted small">{{ user_info.email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-secondary fw-medium">{{ user_info.student_id }}</td>
+                            <td>
+                                {% set count = user_info.homeworks|length if user_info.homeworks else 0 %}
+                                <span
+                                    class="badge {% if count > 0 %}bg-soft-primary text-primary{% else %}bg-soft-secondary text-muted{% endif %} px-3 py-2 rounded-pill">
+                                    已交 {{ count }} 份
+                                </span>
+                            </td>
+                            <td class="text-end pe-4">
+                                {% if user_info.homeworks %}
+                                <button type="button" class="btn btn-outline-primary btn-sm rounded-2 px-3"
+                                    data-bs-toggle="modal" data-bs-target="#homeworkModal{{ user_id }}">
+                                    <i class="ph ph-eye me-1"></i> 查看详情
+                                </button>
+                                {% else %}
+                                <span class="text-muted small italic">暂无记录</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% set ns.counter = ns.counter + 1 %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if not user_stats %}
+            <div class="text-center py-5">
+                <i class="ph ph-folder-not-found fs-1 text-muted"></i>
+                <p class="mt-3 text-muted">暂无任何学生注册信息</p>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 
-<!-- 作业详情模态框 -->
 {% for user_id, user_info in user_stats.items() %}
-{% if user_info.homeworks %}
-<div class="modal fade" id="homeworkModal{{ user_id }}" tabindex="-1" aria-labelledby="homeworkModalLabel{{ user_id }}" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="homeworkModalLabel{{ user_id }}">{{ user_info.username }}（{{ user_info.student_id }}）的作业提交详情</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>作业次数</th>
-                    <th>文件名</th>
-                    <th>提交时间</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for homework in user_info.homeworks %}
-                <tr>
-                    <td>{{ homework.name }}</td>
-                    <td>{{ homework.file_name }}</td>
-                    <td>{{ homework.submit_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                    <td>
-                        <a href="{{ url_for('admin.download', homework_id=homework.id) }}" class="btn btn-success btn-sm">下载</a>
-                        <a href="{{ url_for('admin.delete', homework_id=homework.id) }}" class="btn btn-danger btn-sm">删除</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-      </div>
-    </div>
-  </div>
-</div>
-{% endif %}
 {% endfor %}
+
+<style>
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+
+    .transition-all:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 1rem 3rem rgba(0, 0, 0, .1) !important;
+    }
+
+    .bg-soft-primary {
+        background-color: rgba(79, 70, 229, 0.1);
+    }
+
+    .bg-soft-secondary {
+        background-color: #f3f4f6;
+    }
+
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--primary-color), #6366f1);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+</style>
 {% endblock %}

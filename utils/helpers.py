@@ -4,7 +4,7 @@ import json
 ALLOWED_EXTENSIONS = {"zip", "pdf", "md"}
 HOMEWORKS = []
 
-with open(os.path.join(os.path.dirname(__file__), "..", "homeworks.json"), "r") as f:
+with open(os.path.join(os.path.dirname(__file__), "..", "homeworks.json"), "r", encoding="utf-8") as f:
     HOMEWORKS = json.load(f)
 
 
