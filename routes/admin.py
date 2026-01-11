@@ -12,6 +12,10 @@ admin_bp = Blueprint("admin", __name__)
 @admin_bp.route("/admin/dashboard")
 @login_required
 def dashboard():
+    if not current_user.is_admin:
+        flash("无权限", "danger")
+        return redirect(url_for("student.dashboard"))
+
     users = User.query.all()
     stats = {}
     total_files = 0

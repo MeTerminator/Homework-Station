@@ -9,7 +9,7 @@ from extensions import db
 student_bp = Blueprint("student", __name__)
 
 
-@student_bp.route("/student_dashboard")
+@student_bp.route("/student/dashboard")
 @login_required
 def dashboard():
     if current_user.is_admin:
@@ -23,7 +23,7 @@ def dashboard():
     return render_template("student_dashboard.html", form=form, homeworks=list_hw)
 
 
-@student_bp.route("/submit_homework", methods=["POST"])
+@student_bp.route("/homework/submit", methods=["POST"])
 @login_required
 def submit():
     if current_user.is_admin:
