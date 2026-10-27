@@ -1,0 +1,134 @@
+@media (max-width: 1150px) {
+  .content {
+    padding: 28px;
+  }
+  .topbar {
+    padding: 0 28px;
+  }
+  .assignment-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .stats {
+    gap: 12px;
+  }
+  .stat {
+    padding: 18px;
+  }
+  .sidebar {
+    width: 210px;
+    padding: 28px 16px;
+  }
+  .workspace {
+    margin-left: 210px;
+  }
+  .brand {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 800px) {
+  .sidebar {
+    transform: translateX(-100%);
+    width: 234px;
+    transition: transform 0.2s;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  .workspace {
+    margin-left: 0;
+  }
+  .mobile-menu {
+    display: inline-flex;
+  }
+  .topbar {
+    height: 68px;
+    padding: 0 20px;
+  }
+  .content {
+    padding: 25px 20px;
+  }
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .chart-grid,
+  .grid-two,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .auth-page {
+    grid-template-columns: 1fr;
+  }
+  .auth-art {
+    display: none;
+  }
+  .auth-main {
+    min-height: 100vh;
+  }
+  .account-name,
+  .topbar-crumb {
+    display: none;
+  }
+  .assignment-grid {
+    grid-template-columns: 1fr;
+  }
+  .page-heading {
+    align-items: flex-start;
+  }
+  .page-heading h1 {
+    font-size: 23px;
+  }
+  .panel {
+    padding: 19px;
+  }
+  .hero-strip {
+    padding: 22px;
+  }
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: #0005;
+    z-index: 19;
+  }
+  .pagination {
+    flex-wrap: wrap;
+  }
+  .chart-box {
+    height: 190px;
+  }
+  .topbar-right {
+    gap: 13px;
+  }
+  .page-heading p {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 800px) {
+  .category-children {
+    margin-left: 4px;
+    padding-left: 12px;
+  }
+  .category-row {
+    flex-wrap: wrap;
+  }
+  .category-row > .row:last-child {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 1100px) {
+  .assignment-browser {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .assignment-filters {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    grid-row: 1;
+    scrollbar-gutter: auto;
+  }
+  .assignment-results {
+    grid-row: 2;
+  }
+}

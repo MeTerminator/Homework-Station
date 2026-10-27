@@ -1,0 +1,17 @@
+{
+  "editor.formatOnSave": true,
+  "[typescript][typescriptreact][javascript][javascriptreact][json][jsonc][css][html][markdown][yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[go]": {
+    "editor.defaultFormatter": "golang.go",
+    "editor.codeActionsOnSave": { "source.organizeImports": "explicit" }
+  },
+  "go.formatTool": "goimports",
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.codeActionsOnSave": { "source.organizeImports": "explicit" }
+  },
+  "[toml]": { "editor.defaultFormatter": "tamasfe.even-better-toml" },
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python"
+}

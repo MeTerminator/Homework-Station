@@ -1,0 +1,145 @@
+.shell {
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 234px;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 32px 20px;
+  z-index: 20;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.5px;
+}
+
+.brand-icon {
+  width: 37px;
+  height: 37px;
+  display: grid;
+  place-items: center;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 11px;
+  box-shadow: 0 5px 12px #ff406e25;
+}
+
+.nav-section {
+  font-size: 11px;
+  color: var(--muted-foreground);
+  padding: 0 15px;
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+}
+
+.sidebar nav {
+  display: grid;
+  gap: 7px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 15px;
+  border-radius: 9px;
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+.nav-link:hover {
+  background: var(--background);
+}
+
+.nav-link.active {
+  background: var(--secondary);
+  color: var(--primary);
+}
+
+.sidebar-foot {
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+
+.workspace {
+  margin-left: 234px;
+}
+
+.topbar {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+  padding: 0 42px;
+  gap: 14px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.avatar {
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  background: var(--secondary);
+  color: var(--primary);
+  display: inline-grid;
+  place-items: center;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.account-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.account-name {
+  text-align: left;
+}
+
+.account-name small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted-foreground);
+  margin-top: 3px;
+}
+
+.content {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 34px 42px 40px;
+}
+
+.mobile-menu {
+  display: none;
+}
+
+.account-menu [role="menuitem"] {
+  cursor: pointer;
+}
+
+.sidebar > .brand {
+  margin-bottom: 36px;
+}

@@ -1,0 +1,24 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DATA_DIR: /app/data
+      WEB_DIST: /app/web/dist
+      DB_DRIVER: ${DB_DRIVER:-sqlite}
+      DB_DSN: ${DB_DSN:-}
+      DB_HOST: ${DB_HOST:-localhost}
+      DB_PORT: ${DB_PORT:-}
+      DB_USER: ${DB_USER:-}
+      DB_PASSWORD: ${DB_PASSWORD:-}
+      DB_NAME: ${DB_NAME:-homework}
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+      JWT_SECRET: ${JWT_SECRET:-}
+      BINDING_SECRET: ${BINDING_SECRET:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    volumes:
+      - homework-data:/app/data
+    restart: unless-stopped
+volumes:
+  homework-data:

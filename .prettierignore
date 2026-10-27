@@ -1,0 +1,14 @@
+.git/
+.venv/
+**/node_modules/
+**/dist/
+**/data/
+**/__pycache__/
+.ruff_cache/
+*.log
+*.tsbuildinfo
+backend/bin/
+backend/homework-station
+.env
+.env.*
+!.env.example

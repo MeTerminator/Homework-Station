@@ -1,9 +1,0 @@
-flask
-flask-sqlalchemy
-flask-login
-flask-wtf
-wtforms
-mysql-connector-python
-pymysql
-python-dotenv
-email-validator
