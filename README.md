@@ -45,6 +45,22 @@ make dev-web
 
 开发页面地址为 [http://localhost:5173](http://localhost:5173)，Vite 将 `/api` 请求代理到 8080。
 
+## 下载发布包与手动发布
+
+在 GitHub 仓库的 **Actions → Release → Run workflow** 中选择要发布的分支，输入版本号（例如 `1.2.3`、`v1.2.3` 或 `1.2.3-rc.1`），点击 **Run workflow**。工作流必须先合入默认分支，才会显示手动运行入口。
+
+工作流先执行完整 CI 检查，再构建前端，以及启用 CGO 的各平台后端；所有平台的测试与构建成功后，自动创建指向本次构建提交的 `v版本号` 标签和 GitHub Release，生成更新说明并上传发布包及 `SHA256SUMS`。已有标签会被拒绝，预发布版本自动标记为 Pre-release；无需配置额外 Token，工作流使用内置 `GITHUB_TOKEN`，仅发布任务具有 `contents: write` 权限。
+
+| 发布包平台 | 架构          | 格式      | 运行要求                                            |
+| ---------- | ------------- | --------- | --------------------------------------------------- |
+| Linux      | amd64 / arm64 | `.tar.gz` | glibc 2.35+，如 Ubuntu 22.04+；不适用于 Alpine/musl |
+| Windows    | amd64         | `.zip`    | 64 位 Windows                                       |
+| macOS      | arm64         | `.tar.gz` | Apple Silicon，macOS 15+；二进制未经签名或公证      |
+
+发布包包含后端程序、完整前端、配置模板、README 和 `VERSION`，无需安装 Go 或 Node.js。解压后进入包内的 `backend/` 目录，Linux/macOS 执行 `./bin/homework-station`，Windows PowerShell 执行 `.\bin\homework-station.exe`，然后访问 [http://localhost:8080](http://localhost:8080)。保持包内的 `backend/` 与 `web/dist/` 相对位置不变；程序不会自动加载 `.env`，自定义配置见下文。
+
+发布包不包含数据库、附件、运行日志或本地密钥。更新时请保留原有数据目录和配置。
+
 ## 环境变量
 
 配置模板见 [.env.example](.env.example)。后端读取进程环境，**不会自动加载 `.env`**。本地需要配置时，可将模板复制为根目录 `.env`，修改后在启动后端前加载：

@@ -1,0 +1,174 @@
+name: Release
+run-name: Release ${{ inputs.version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "版本号，例如 1.2.3、v1.2.3 或 1.2.3-rc.1"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-22.04
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate version and reject existing tags
+        id: version
+        env:
+          VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          pattern='^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$'
+          if [[ ! "$VERSION" =~ $pattern ]]; then
+            echo "::error::Invalid version. Use 1.2.3, v1.2.3 or 1.2.3-rc.1."
+            exit 1
+          fi
+          tag="v${VERSION#v}"
+          if git show-ref --verify --quiet "refs/tags/$tag"; then
+            echo "::error::Tag $tag already exists. Choose a new version."
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if [[ "$tag" == *-* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  checks:
+    needs: prepare
+    uses: ./.github/workflows/ci.yml
+
+  frontend:
+    needs: checks
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+      - run: npm run build
+        working-directory: web
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: web/dist/
+          if-no-files-found: error
+          retention-days: 1
+
+  build:
+    needs: [prepare, frontend]
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: linux-amd64
+            runner: ubuntu-22.04
+            extension: ""
+          - target: linux-arm64
+            runner: ubuntu-22.04-arm
+            extension: ""
+          - target: windows-amd64
+            runner: windows-2022
+            extension: .exe
+          - target: darwin-arm64
+            runner: macos-15
+            extension: ""
+    defaults:
+      run:
+        shell: bash
+    env:
+      CGO_ENABLED: "1"
+      RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+      RELEASE_TARGET: ${{ matrix.target }}
+      BINARY_EXTENSION: ${{ matrix.extension }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: web/dist
+      - name: Test backend on target platform
+        working-directory: backend
+        run: go test ./...
+      - name: Build backend
+        working-directory: backend
+        run: go build -trimpath -ldflags="-s -w" -o "bin/homework-station${BINARY_EXTENSION}" ./cmd/server
+      - name: Package release
+        run: python scripts/package_release.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.target }}
+          path: release/*
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: [prepare, build]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+      PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: release
+          merge-multiple: true
+      - name: Check assets and generate checksums
+        working-directory: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          for target in linux-amd64 linux-arm64 darwin-arm64; do
+            test -s "homework-station-${RELEASE_TAG}-${target}.tar.gz"
+          done
+          test -s "homework-station-${RELEASE_TAG}-windows-amd64.zip"
+          sha256sum *.tar.gz *.zip > SHA256SUMS
+      - name: Publish GitHub Release
+        shell: bash
+        run: |
+          set -euo pipefail
+          flags=()
+          if [[ "$PRERELEASE" == true ]]; then
+            flags+=(--prerelease --latest=false)
+          fi
+          gh release create "$RELEASE_TAG" release/*.tar.gz release/*.zip release/SHA256SUMS \
+            --target "$GITHUB_SHA" \
+            --title "$RELEASE_TAG" \
+            --draft \
+            --generate-notes \
+            "${flags[@]}"
+          gh release edit "$RELEASE_TAG" --draft=false "${flags[@]}"

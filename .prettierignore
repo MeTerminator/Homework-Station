@@ -12,3 +12,4 @@ backend/homework-station
 .env
 .env.*
 !.env.example
+release/
