@@ -9,9 +9,8 @@ import { AssignmentCategorySection } from "@/features/assignments/components/ass
 import { CategoryFilter } from "@/features/categories/components/category-filter";
 import {
   categoryTree,
-  descendantIDs,
-  flattenCategories,
   groupAssignments,
+  matchingCategoryIDs,
 } from "@/features/categories/lib/category-tree";
 import { selectedCategories } from "@/features/categories/lib/preferences";
 import { useData } from "@/hooks/use-data";
@@ -42,13 +41,7 @@ export function MyAssignments() {
     });
   };
   const tree = categoryTree(cats.data || []);
-  const nodes = flattenCategories(tree);
-  const selectedIDs = new Set(
-    selected.flatMap((id) => {
-      const node = nodes.find((n) => n.category.id === id);
-      return node ? descendantIDs([node]) : [];
-    }),
-  );
+  const selectedIDs = matchingCategoryIDs(tree, selected);
   const all = q.data?.items || [];
   const visible = all.filter(
     (a) =>
@@ -152,7 +145,7 @@ export function MyAssignments() {
               </div>
             </div>
             <p className="small muted" style={{ marginTop: 15, fontSize: 11 }}>
-              可多选，偏好会保存到你的账号；选择父分类会同时展示其子分类作业。
+              可多选，偏好会保存到你的账号；选择分类会同时展示其所有父级和子级分类的作业。
             </p>
             {cats.error && (
               <p className="small" style={{ color: "#dc6472", marginTop: 10 }}>

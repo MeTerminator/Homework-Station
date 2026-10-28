@@ -34,6 +34,22 @@ export function flattenCategories(nodes: CategoryNode[]): CategoryNode[] {
 export function descendantIDs(nodes: CategoryNode[]): number[] {
   return flattenCategories(nodes).map((node) => node.category.id);
 }
+export function matchingCategoryIDs(
+  nodes: CategoryNode[],
+  selected: number[],
+): Set<number> {
+  const selectedIDs = new Set(selected);
+  const matching = new Set<number>();
+  const visit = (node: CategoryNode, ancestors: number[], inherited: boolean) => {
+    const isSelected = selectedIDs.has(node.category.id);
+    if (isSelected) ancestors.forEach((id) => matching.add(id));
+    if (isSelected || inherited) matching.add(node.category.id);
+    for (const child of node.children)
+      visit(child, [...ancestors, node.category.id], isSelected || inherited);
+  };
+  nodes.forEach((node) => visit(node, [], false));
+  return matching;
+}
 export function parentCategoryOptions(
   categories: Category[],
   movingID?: number,

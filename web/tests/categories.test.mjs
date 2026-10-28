@@ -5,6 +5,7 @@ import {
   flattenCategories,
   parentCategoryOptions,
   groupAssignments,
+  matchingCategoryIDs,
 } from "../src/features/categories/lib/category-tree.ts";
 
 const categories = [
@@ -20,6 +21,31 @@ const assignment = (id, category_id, submitted = false, sort = 0) => ({
   category_id,
   submitted,
   sort,
+});
+
+test("selecting a leaf includes every ancestor but excludes sibling branches", () => {
+  const ids = matchingCategoryIDs(categoryTree(categories), [3]);
+  assert.deepEqual([...ids].sort(), [1, 2, 3]);
+  const groups = groupAssignments(
+    categories,
+    categories.map((c) => assignment(c.id, c.id)).filter((a) => ids.has(a.category_id)),
+  );
+  assert.equal(groups[0].items[0].category_id, 1);
+  assert.equal(groups[0].children[0].items[0].category_id, 2);
+  assert.equal(groups[0].children[0].children[0].items[0].category_id, 3);
+  assert.equal(groups[0].total, 3);
+});
+test("selecting a parent retains descendants and includes its ancestors", () => {
+  assert.deepEqual(
+    [...matchingCategoryIDs(categoryTree(categories), [2])].sort(),
+    [1, 2, 3, 4],
+  );
+});
+test("multiple selections combine branches without duplicating shared ancestors", () => {
+  assert.deepEqual(
+    [...matchingCategoryIDs(categoryTree(categories), [3, 4, 6])].sort(),
+    [1, 2, 3, 4, 6],
+  );
 });
 
 test("categories use tree order and three indentation levels", () => {
