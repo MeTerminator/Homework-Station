@@ -20,7 +20,7 @@ func New(h *handler.Handler, output *log.Logger) *gin.Engine {
 	r.Use(gin.Recovery(), gin.LoggerWithWriter(output.Writer()), middleware.Security())
 	r.GET("/api/health", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
 	r.GET("/api/public-settings", func(c *gin.Context) {
-		c.JSON(200, gin.H{"site_title": h.Settings.Get("site_title"), "browser_title": h.Settings.Get("browser_title"), "site_logo": h.Settings.Get("site_logo"), "site_icon": h.Settings.Get("site_icon"), "registration_enabled": h.Settings.Get("registration_enabled"), "realname_enabled": strings.TrimSpace(h.Settings.Get("realname_api_url")) != ""})
+		c.JSON(200, gin.H{"qq_binding_instructions": h.Settings.Get("qq_binding_instructions"), "site_title": h.Settings.Get("site_title"), "browser_title": h.Settings.Get("browser_title"), "site_logo": h.Settings.Get("site_logo"), "site_icon": h.Settings.Get("site_icon"), "registration_enabled": h.Settings.Get("registration_enabled"), "realname_student_no_placeholder": h.Settings.Get("realname_student_no_placeholder"), "realname_enabled": strings.TrimSpace(h.Settings.Get("realname_api_url")) != ""})
 	})
 	r.GET("/api/branding/:name", h.BrandingImage)
 	r.GET("/api/captcha", h.CaptchaHandler)

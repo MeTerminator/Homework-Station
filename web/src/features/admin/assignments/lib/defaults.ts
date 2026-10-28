@@ -12,6 +12,8 @@ export const blankAssignment: Assignment = {
   max_size: 20 * 1024 ** 2,
   multiple: true,
   withdraw: true,
+  require_real_name: false,
+  require_qq: false,
   created_at: "",
   submitters: 0,
   submitted: false,

@@ -160,6 +160,20 @@
   background: currentColor;
 }
 
+.binding-instructions {
+  line-height: 1.9;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.binding-command {
+  border-radius: 5px;
+  padding: 4px 8px;
+  background: var(--secondary);
+  color: var(--primary);
+  font-size: 0.92em;
+}
+
 .badge.green {
   color: #29a77e;
   background: #29a77e15;

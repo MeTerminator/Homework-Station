@@ -34,6 +34,12 @@ func (svc *SubmissionService) Create(u model.User, assignmentID uint, v Submissi
 	if a.Status != "published" || (a.Deadline != nil && !a.Deadline.After(time.Now())) {
 		return model.Submission{}, Reject(409, "作业尚未发布或已截止")
 	}
+	if a.RequireRealName && (u.StudentNo == nil || strings.TrimSpace(*u.StudentNo) == "" || strings.TrimSpace(u.RealName) == "") {
+		return model.Submission{}, Reject(403, "此作业需要完成实名认证后才能提交")
+	}
+	if a.RequireQQ && (u.QQ == nil || strings.TrimSpace(*u.QQ) == "") {
+		return model.Submission{}, Reject(403, "此作业需要绑定 QQ 后才能提交")
+	}
 	if strings.TrimSpace(v.Content) == "" && len(v.AttachmentIDs) == 0 {
 		return model.Submission{}, Reject(400, "请填写内容或上传附件")
 	}

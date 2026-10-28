@@ -63,8 +63,7 @@ export function MyAssignments() {
       <div className="hero-strip">
         <div>
           <h2>
-            你好，{user?.real_name || user?.username}{" "}
-            <span style={{ fontSize: 19 }}>☀</span>
+            你好，{user?.username} <span style={{ fontSize: 19 }}>☀</span>
           </h2>
           <p>
             你有 <strong style={{ color: "var(--primary)" }}>{pending}</strong>{" "}

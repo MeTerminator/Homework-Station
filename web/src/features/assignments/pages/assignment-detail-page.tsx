@@ -38,7 +38,12 @@ export function AssignmentDetail() {
   const a = q.data?.assignment;
   const own = (mine.data || []).filter((s) => s.user_id === user?.id);
   const active = own.filter((s) => !s.withdrawn);
-  const canSubmit = a?.status === "published" && (a.multiple || active.length === 0);
+  const missingRealName = !!a?.require_real_name && !user?.student_no;
+  const missingQQ = !!a?.require_qq && !user?.qq;
+  const canSubmit =
+    a?.status === "published" &&
+    (!a.deadline || new Date(a.deadline).getTime() > Date.now()) &&
+    (a.multiple || active.length === 0);
   return (
     <>
       <PageHeading
@@ -89,7 +94,30 @@ export function AssignmentDetail() {
                 </span>
               }
             >
-              {canSubmit ? (
+              {(a.require_real_name || a.require_qq) && (
+                <p className="muted small" style={{ marginBottom: 16 }}>
+                  提交条件：
+                  {[
+                    a.require_real_name ? "完成实名认证" : "",
+                    a.require_qq ? "绑定 QQ" : "",
+                  ]
+                    .filter(Boolean)
+                    .join("、")}
+                  {a.require_real_name && a.require_qq ? "（需全部满足）" : ""}
+                </p>
+              )}
+              {canSubmit && (missingRealName || missingQQ) ? (
+                <div className="note">
+                  请先
+                  {[missingRealName ? "完成实名认证" : "", missingQQ ? "绑定 QQ" : ""]
+                    .filter(Boolean)
+                    .join("并")}
+                  后再提交作业。
+                  <Link className="link" to="/profile">
+                    前往个人信息
+                  </Link>
+                </div>
+              ) : canSubmit ? (
                 <form
                   className="stack"
                   onSubmit={(e) => {
@@ -149,7 +177,8 @@ export function AssignmentDetail() {
                 </form>
               ) : (
                 <div className="note">
-                  {a.status === "closed"
+                  {a.status === "closed" ||
+                  (a.deadline && new Date(a.deadline).getTime() <= Date.now())
                     ? "此作业已截止。"
                     : a.status === "hidden"
                       ? "此作业未发布。"

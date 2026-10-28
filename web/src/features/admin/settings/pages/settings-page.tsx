@@ -1,9 +1,12 @@
 import { useSession } from "@/app/providers/session-provider";
+import { BindingInstructions } from "@/components/binding-instructions";
 import { LoadState } from "@/components/feedback/load-state";
 import { Field } from "@/components/form/field";
 import { PageHeading } from "@/components/page-heading";
 import { Panel } from "@/components/panel";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { DEFAULT_QQ_BINDING_INSTRUCTIONS } from "@/lib/qq-binding";
 import { Input } from "@/components/ui/input";
 import { useData } from "@/hooks/use-data";
 import { perform } from "@/lib/actions";
@@ -187,6 +190,32 @@ export function SettingsPage() {
           <Panel title="实名认证">
             <div className="form-grid">
               <Field
+                label="学号格式（正则表达式）"
+                hint="使用 Go（RE2）正则语法，不带 / 分隔符，自动匹配整个学号。默认 ^[0-9]{10}$；字母加数字示例：^[A-Z]{2}[0-9]{8}$。学号最多 128 个字符。"
+              >
+                <Input
+                  required
+                  disabled={busy}
+                  maxLength={1024}
+                  value={form.realname_student_no_pattern ?? ""}
+                  placeholder="^[0-9]{10}$"
+                  onChange={(e) => set("realname_student_no_pattern", e.target.value)}
+                />
+              </Field>
+              <Field
+                label="学号输入框占位提示（placeholder）"
+                hint="显示在实名认证的学号输入框中，也用于学号格式错误提示。"
+              >
+                <Input
+                  required
+                  disabled={busy}
+                  maxLength={200}
+                  value={form.realname_student_no_placeholder ?? ""}
+                  placeholder="10 位数字学号"
+                  onChange={(e) => set("realname_student_no_placeholder", e.target.value)}
+                />
+              </Field>
+              <Field
                 full
                 label="认证 API URL"
                 hint="留空关闭实名认证。通过 GET 请求调用，{id} 替换为学号、{name} 替换为姓名，参数自动进行 URL 编码。"
@@ -238,19 +267,42 @@ export function SettingsPage() {
             </div>
           </Panel>
           <Panel title="QQ 绑定">
-            <Field
-              label="绑定码 Secret"
-              hint="至少 32 个字符，与 NoneBot 插件 HOMEWORK_BINDING_SECRET 保持一致。修改后，尚未使用的旧绑定码将失效。"
-            >
-              <Input
-                type="password"
-                autoComplete="off"
-                value={form.binding_secret || ""}
-                onChange={(e) => set("binding_secret", e.target.value)}
-                minLength={32}
-                required
-              />
-            </Field>
+            <div className="stack">
+              <Field
+                label="绑定说明"
+                hint={
+                  "显示在个人信息页的 QQ 绑定表单上方。用一对反引号包裹指令，例如 `/绑定码`，会显示为不带圆点的标签；支持换行，最多 2000 个字符。"
+                }
+              >
+                <Textarea
+                  required
+                  disabled={busy}
+                  rows={4}
+                  maxLength={2000}
+                  value={form.qq_binding_instructions ?? DEFAULT_QQ_BINDING_INSTRUCTIONS}
+                  onChange={(e) => set("qq_binding_instructions", e.target.value)}
+                />
+              </Field>
+              <div>
+                <p className="small muted">说明预览</p>
+                <BindingInstructions
+                  text={form.qq_binding_instructions ?? DEFAULT_QQ_BINDING_INSTRUCTIONS}
+                />
+              </div>
+              <Field
+                label="绑定码 Secret"
+                hint="至少 32 个字符，与 NoneBot 插件 HOMEWORK_BINDING_SECRET 保持一致。修改后，尚未使用的旧绑定码将失效。"
+              >
+                <Input
+                  type="password"
+                  autoComplete="off"
+                  value={form.binding_secret || ""}
+                  onChange={(e) => set("binding_secret", e.target.value)}
+                  minLength={32}
+                  required
+                />
+              </Field>
+            </div>
           </Panel>
           <div>
             <Button type="submit" disabled={busy || uploading}>

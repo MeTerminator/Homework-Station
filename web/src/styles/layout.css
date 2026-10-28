@@ -32,7 +32,7 @@
   background: var(--primary);
   color: #fff;
   border-radius: 11px;
-  box-shadow: 0 5px 12px #ff406e25;
+  box-shadow: none;
 }
 
 .nav-section {

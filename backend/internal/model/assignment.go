@@ -15,6 +15,8 @@ type Assignment struct {
 	MaxSize          int64      `json:"max_size"`
 	Multiple         bool       `json:"multiple"`
 	Withdraw         bool       `json:"withdraw"`
+	RequireRealName  bool       `json:"require_real_name" gorm:"not null;default:false"`
+	RequireQQ        bool       `json:"require_qq" gorm:"not null;default:false"`
 	CreatedAt        time.Time  `json:"created_at"`
 	UpdatedAt        time.Time  `json:"updated_at"`
 	Submitters       int64      `json:"submitters" gorm:"-"`

@@ -30,6 +30,8 @@ export interface Assignment {
   max_size: number;
   multiple: boolean;
   withdraw: boolean;
+  require_real_name: boolean;
+  require_qq: boolean;
   created_at: string;
   submitters: number;
   submitted: boolean;

@@ -32,6 +32,7 @@ func TestBrandingSettings(t *testing.T) {
 	guest.request("POST", "/api/admin/settings/images", nil, 401)
 	student := &testClient{t: t, r: application.Router}
 	student.register("branding-student")
+	student.request("PUT", "/api/admin/settings", gin.H{"qq_binding_instructions": "student override"}, 403)
 	student.request("POST", "/api/admin/settings/images", nil, 403)
 	admin.request("POST", "/api/login", gin.H{"username": "admin", "password": "123456"}, 200)
 
@@ -71,10 +72,11 @@ func TestBrandingSettings(t *testing.T) {
 	}
 	guest.request("GET", "/api/branding/unknown.png", nil, 404)
 	values := map[string]string{
-		"site_title":    "Homework Hub 学习站",
-		"browser_title": "Example School — Homework",
-		"site_logo":     url,
-		"site_icon":     url,
+		"site_title":              "Homework Hub 学习站",
+		"browser_title":           "Example School — Homework",
+		"qq_binding_instructions": "私聊机器人发送 `/绑定码`\n再将绑定码粘贴到下方，也可发送 `/帮助`。",
+		"site_logo":               url,
+		"site_icon":               url,
 	}
 	admin.request("PUT", "/api/admin/settings", values, 200)
 	public := decode[map[string]any](t, guest.request("GET", "/api/public-settings", nil, 200))
@@ -93,6 +95,8 @@ func TestBrandingSettings(t *testing.T) {
 		{"site_title": "  "},
 		{"site_title": strings.Repeat("中", 121)},
 		{"browser_title": strings.Repeat("a", 121)},
+		{"qq_binding_instructions": "  "},
+		{"qq_binding_instructions": strings.Repeat("中", 2001)},
 	} {
 		admin.request("PUT", "/api/admin/settings", bad, 400)
 	}

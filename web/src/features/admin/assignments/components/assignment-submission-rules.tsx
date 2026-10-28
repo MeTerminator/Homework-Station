@@ -46,6 +46,16 @@ export function AssignmentSubmissionRules({
         </Field>
         <div className="stack" style={{ gap: 18, paddingTop: 24 }}>
           <CheckField
+            label="必须完成实名认证后才能提交"
+            checked={form.require_real_name}
+            onChange={(v) => onChangeField("require_real_name", v)}
+          />
+          <CheckField
+            label="必须绑定 QQ 后才能提交"
+            checked={form.require_qq}
+            onChange={(v) => onChangeField("require_qq", v)}
+          />
+          <CheckField
             label="允许多次提交（保留全部历史）"
             checked={form.multiple}
             onChange={(v) => onChangeField("multiple", v)}

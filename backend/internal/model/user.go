@@ -9,7 +9,7 @@ type User struct {
 	Admin       bool      `json:"admin"`
 	AuthVersion uint      `json:"-"`
 	AvatarID    *uint     `json:"avatar_id"`
-	StudentNo   *string   `json:"student_no" gorm:"uniqueIndex;size:10"`
+	StudentNo   *string   `json:"student_no" gorm:"uniqueIndex;size:128"`
 	RealName    string    `json:"real_name"`
 	QQ          *string   `json:"qq" gorm:"uniqueIndex;size:20"`
 	CategoryIDs string    `json:"category_ids"`

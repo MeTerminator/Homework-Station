@@ -1,4 +1,5 @@
 import { useSession } from "@/app/providers/session-provider";
+import { BindingInstructions } from "@/components/binding-instructions";
 import { Field } from "@/components/form/field";
 import { Panel } from "@/components/panel";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { CheckCircle2, UserRound } from "lucide-react";
 import { useState } from "react";
 import { useProfileAction } from "../hooks/use-profile-action";
 export function QQBindingCard() {
-  const { user, setUser } = useSession();
+  const { user, setUser, qqBindingInstructions } = useSession();
   const { busy, act } = useProfileAction();
   const [code, setCode] = useState("");
   if (!user) return null;
@@ -44,10 +45,7 @@ export function QQBindingCard() {
             );
           }}
         >
-          <p className="muted small" style={{ lineHeight: 1.9 }}>
-            私聊机器人发送 <code className="badge">/绑定码</code>
-            ，将收到的绑定码粘贴到下方。绑定码 5 分钟内有效，请勿发送给他人。
-          </p>
+          <BindingInstructions text={qqBindingInstructions} />
           <Field label="绑定码">
             <Textarea
               required

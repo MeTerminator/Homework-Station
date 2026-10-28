@@ -13,7 +13,9 @@ export function RealNameBindingCard() {
   const { user, setUser } = useSession();
   const { busy, act } = useProfileAction();
   const identitySettings = useData(() =>
-    api<{ realname_enabled: boolean }>("/public-settings"),
+    api<{ realname_enabled: boolean; realname_student_no_placeholder: string }>(
+      "/public-settings",
+    ),
   );
   const [real, setReal] = useState({ student_no: "", name: "" });
   if (!user) return null;
@@ -73,12 +75,11 @@ export function RealNameBindingCard() {
           <Field label="学号">
             <Input
               required
-              pattern="[0-9]{10}"
-              inputMode="numeric"
-              maxLength={10}
+              maxLength={128}
+              title={identitySettings.data?.realname_student_no_placeholder}
               value={real.student_no}
               onChange={(e) => setReal({ ...real, student_no: e.target.value })}
-              placeholder="10 位数字学号"
+              placeholder={identitySettings.data?.realname_student_no_placeholder}
             />
           </Field>
           <Field label="姓名">

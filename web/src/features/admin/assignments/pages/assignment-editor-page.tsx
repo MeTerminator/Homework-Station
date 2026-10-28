@@ -66,6 +66,8 @@ export function AssignmentEditor() {
           max_size: form.max_size,
           multiple: form.multiple,
           withdraw: form.withdraw,
+          require_real_name: form.require_real_name,
+          require_qq: form.require_qq,
           attachment_ids: files.map((f) => f.id),
         }),
       );

@@ -3,6 +3,7 @@ package handler
 import (
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"homework-station/internal/model"
 
@@ -14,8 +15,8 @@ func (h *Handler) BindReal(c *gin.Context) {
 		StudentNo string `json:"student_no"`
 		Name      string `json:"name"`
 	}
-	if c.ShouldBindJSON(&v) != nil || !regexp.MustCompile(`^[0-9]{10}$`).MatchString(v.StudentNo) || strings.TrimSpace(v.Name) == "" {
-		fail(c, 400, "请输入 10 位数字学号和姓名")
+	if c.ShouldBindJSON(&v) != nil || v.StudentNo == "" || utf8.RuneCountInString(v.StudentNo) > 128 || strings.TrimSpace(v.Name) == "" {
+		fail(c, 400, "请输入学号（最多 128 个字符）和姓名")
 		return
 	}
 	u := current(c)
@@ -26,6 +27,15 @@ func (h *Handler) BindReal(c *gin.Context) {
 	fields, err := h.Settings.IdentityConfig()
 	if err != nil {
 		respondError(c, err)
+		return
+	}
+	pattern, err := regexp.Compile(`\A(?:` + fields["realname_student_no_pattern"] + `)\z`)
+	if err != nil || fields["realname_student_no_pattern"] == "" {
+		fail(c, 503, "学号格式配置无效，请联系管理员")
+		return
+	}
+	if !pattern.MatchString(v.StudentNo) {
+		fail(c, 400, "学号格式不正确："+fields["realname_student_no_placeholder"])
 		return
 	}
 	realName, err := h.Identity.Verify(fields, v.StudentNo, strings.TrimSpace(v.Name))

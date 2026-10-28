@@ -45,7 +45,7 @@ export function UserList() {
               <table>
                 <thead>
                   <tr>
-                    {["用户", "ID", "权限", "实名信息", "QQ", "注册时间", ""].map(
+                    {["用户", "ID", "权限", "实名认证", "QQ", "注册时间", ""].map(
                       (s, i) => (
                         <th key={i}>{s}</th>
                       ),
@@ -73,10 +73,7 @@ export function UserList() {
                           {u.admin ? "管理员" : "用户"}
                         </span>
                       </td>
-                      <td>
-                        {u.real_name || "未绑定"}
-                        <span className="muted small"> {u.student_no}</span>
-                      </td>
+                      <td>{u.student_no ? "已认证" : "未认证"}</td>
                       <td className="muted">{u.qq || "未绑定"}</td>
                       <td className="muted">{dateText(u.created_at)}</td>
                       <td>

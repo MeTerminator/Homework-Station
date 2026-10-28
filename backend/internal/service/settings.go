@@ -68,6 +68,11 @@ func (s *SettingsService) Update(m map[string]string) error {
 			if e != nil || n <= 0 || n > 10*1024*1024*1024 {
 				return Reject(400, "大小应为 1 字节至 10GB")
 			}
+		case "qq_binding_instructions":
+			m[k] = strings.TrimSpace(v)
+			if m[k] == "" || utf8.RuneCountInString(m[k]) > 2000 {
+				return Reject(400, "QQ 绑定说明需为 1–2000 个字符")
+			}
 		case "binding_secret":
 			if len(v) < 32 {
 				return Reject(400, "绑定码 secret 至少 32 个字符")
@@ -76,7 +81,7 @@ func (s *SettingsService) Update(m map[string]string) error {
 			if v != "true" && v != "false" {
 				return Reject(400, "注册开关无效")
 			}
-		case "realname_api_url", "realname_success_field", "realname_success_value", "realname_id_field", "realname_name_field":
+		case "realname_student_no_pattern", "realname_student_no_placeholder", "realname_api_url", "realname_success_field", "realname_success_value", "realname_id_field", "realname_name_field":
 			if err := validateRealNameSetting(k, v); err != nil {
 				return Reject(400, err.Error())
 			}

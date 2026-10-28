@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 func jsonField(value any, path string) (any, bool) {
@@ -63,6 +65,17 @@ func realNameURL(template, id, name string) string {
 
 func validateRealNameSetting(key, value string) error {
 	switch key {
+	case "realname_student_no_pattern":
+		if value == "" || len(value) > 1024 {
+			return fmt.Errorf("学号正则表达式必填且最多 1024 字节")
+		}
+		if _, err := regexp.Compile(`\A(?:` + value + `)\z`); err != nil {
+			return fmt.Errorf("学号正则表达式无效，请使用 Go（RE2）正则语法：%v", err)
+		}
+	case "realname_student_no_placeholder":
+		if strings.TrimSpace(value) == "" || utf8.RuneCountInString(value) > 200 {
+			return fmt.Errorf("学号占位提示需为 1–200 个字符")
+		}
 	case "realname_api_url":
 		if value == "" {
 			return nil
