@@ -400,6 +400,15 @@
   --md-editor-font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+/* Restore markers removed by Preflight; keep nested and task-list overrides. */
+.markdown-editor :where(.wmde-markdown) ul {
+  list-style-type: disc;
+}
+
+.markdown-editor :where(.wmde-markdown) ol {
+  list-style-type: decimal;
+}
+
 .error-box {
   margin-bottom: 20px;
   padding: 14px;
