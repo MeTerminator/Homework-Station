@@ -1,0 +1,22 @@
+# Include this server block inside nginx's http context.
+# Replace homework.example.com, then add TLS using your certificate tooling.
+server {
+    listen 80;
+    server_name homework.example.com;
+
+    # Allow normal form uploads; file attachments use 1 MiB chunks.
+    client_max_body_size 32m;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        # Preserve the public host AND port for Origin validation.
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        # This example is a single public-facing proxy: overwrite client input.
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+}

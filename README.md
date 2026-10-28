@@ -231,6 +231,34 @@ JWT 使用 HS256，包含字符串 `qq`、`ttl=300`、秒级 `iat` / `exp`、`au
 
 认证使用 HttpOnly、SameSite=Strict Cookie 和 bcrypt 密码摘要；更改密码或管理员权限会使旧会话失效。HTTPS 部署时设置 `COOKIE_SECURE=true`，反向代理保留正确的 Host 与 Origin。
 
+### 反向代理与真实 IP
+
+`403 来源校验失败` 表示非 GET/HEAD 请求携带的 `Origin` 无法解析，或其中的域名、端口与后端收到的 `Host` 不一致。这是防止跨站请求的来源检查。常见原因是代理默认把 `Host` 改成 `127.0.0.1:8080` 或容器名，而浏览器的 `Origin` 仍是公网域名。应保留原始 Host（包含非标准端口），不要重写或删除浏览器的 Origin。
+
+完整 Nginx 示例见 [docs/nginx.conf.example](docs/nginx.conf.example)。将域名替换为实际域名，在 Nginx 的 `http` 上下文中引入；HTTPS 证书与监听按实际部署配置。关键请求头如下：
+
+```nginx
+proxy_set_header Host $http_host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $remote_addr;
+proxy_set_header X-Forwarded-Proto $scheme;
+```
+
+示例适用于用户直接访问的单层 Nginx：覆盖用户传入的 IP 头。`$http_host` 会保留公网端口，避免使用 `$host` 丢失非标准端口。`X-Forwarded-Proto` 传递外部协议，Cookie 的 Secure 属性仍由 `COOKIE_SECURE` 配置控制。相关指令见 [Nginx 官方文档](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header)。
+
+后端通过 `TRUSTED_PROXIES` 指定可信代理，支持逗号或空白分隔的 IPv4、IPv6 及 CIDR。例如，Nginx 与原生后端在同一主机，通过回环地址连接时：
+
+```dotenv
+TRUSTED_PROXIES=127.0.0.1,::1
+COOKIE_SECURE=true
+```
+
+`COOKIE_SECURE=true` 适用于 HTTPS；本地 HTTP 测试保留 `false`。原生运行时需先导出这些环境变量；Docker Compose 会从 `.env` 传给容器。修改后重启后端，Compose 部署执行 `docker compose up -d --build`。
+
+仅在连接后端的直接对端属于可信代理时，后端才读取 `X-Forwarded-For`，其次读取 `X-Real-IP`；日志和登录/注册限流使用识别出的 IP。多层代理的 `X-Forwarded-For` 从右向左检查，选择第一个不可信地址；需要在入口覆盖外部传入的 IP 头，内部代理再追加地址，并配置实际可信代理链。机制见 [Gin 官方说明](https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies)。
+
+未设置 `TRUSTED_PROXIES` 时默认信任 `127.0.0.1`；显式设置 `TRUSTED_PROXIES=` 则不信任任何转发 IP 头，原生运行与 Docker Compose 行为一致。已有 `.env` 中若保留空值，需要删除该行或改为 `TRUSTED_PROXIES=127.0.0.1` 才会使用回环代理。无效的 IP/CIDR 会导致启动失败。不要配置 `0.0.0.0/0` 或 `::/0`；只填写实际代理地址或受控网络。Docker 中直接对端可能是网桥网关或代理容器 IP，并非 `127.0.0.1`，应以实际连接地址配置。宿主机 Nginx 代理 Docker 后端时，建议把 Compose 端口映射改为 `127.0.0.1:8080:8080`；同一容器网络内代理时使用服务名 `http://app:8080`，并限制后端只能由代理访问。
+
 备份需要同时考虑数据库和附件：SQLite 部署可在停服后备份整个 `DATA_DIR`；外部数据库需另做与文件目录一致的备份。迁移时保留会话密钥，修改 `DATA_DIR` 前同时迁移已有文件和数据库中的存储路径。
 
 ## 测试与仓库内容

@@ -16,6 +16,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-}
       BINDING_SECRET: ${BINDING_SECRET:-}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES-127.0.0.1}
     volumes:
       - homework-data:/app/data
     restart: unless-stopped

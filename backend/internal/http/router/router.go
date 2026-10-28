@@ -1,9 +1,11 @@
 package router
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
+	"homework-station/internal/config"
 	"homework-station/internal/frontend"
 	"homework-station/internal/http/handler"
 	"homework-station/internal/http/middleware"
@@ -11,10 +13,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func New(h *handler.Handler, output *log.Logger) *gin.Engine {
+func New(h *handler.Handler, output *log.Logger, cfg config.Config) (*gin.Engine, error) {
 	r := gin.New()
 	limiter := middleware.NewRateLimiter()
-	r.SetTrustedProxies(nil)
+	r.RemoteIPHeaders = []string{"X-Forwarded-For", "X-Real-IP"}
+	if err := r.SetTrustedProxies(cfg.TrustedProxies); err != nil {
+		return nil, fmt.Errorf("TRUSTED_PROXIES 必须为 IP 地址或 CIDR: %w", err)
+	}
 	r.Use(gin.Recovery(), gin.LoggerWithWriter(output.Writer()), middleware.Security())
 	r.GET("/api/health", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
 	r.GET("/api/public-settings", func(c *gin.Context) {
@@ -64,5 +69,5 @@ func New(h *handler.Handler, output *log.Logger) *gin.Engine {
 	ad.DELETE("/attachments/:id", h.DeleteAttachment)
 	ad.DELETE("/submissions/:id", h.DeleteSubmission)
 	r.NoRoute(frontendHandler(frontend.Files()))
-	return r
+	return r, nil
 }

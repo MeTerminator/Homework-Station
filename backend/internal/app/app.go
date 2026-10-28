@@ -73,7 +73,11 @@ func New(cfg config.Config) (*App, error) {
 		return nil, err
 	}
 	application.Handler = handler.New(db, cfg, secret)
-	application.Router = router.New(application.Handler, output)
+	application.Router, err = router.New(application.Handler, output, cfg)
+	if err != nil {
+		application.Close()
+		return nil, err
+	}
 	return application, nil
 }
 func (a *App) Close() error {
