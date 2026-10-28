@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -17,7 +18,23 @@ func TestAssignmentSummaryUpgradeAndEditing(t *testing.T) {
 	t.Setenv("DB_DRIVER", "sqlite")
 	t.Setenv("DB_DSN", "")
 	t.Setenv("JWT_SECRET", "test-session-secret-32-characters-long")
-	application, err := New(config.Load())
+	t.Run("sqlite", func(t *testing.T) {
+		testAssignmentSummaryUpgradeAndEditing(t, config.Load())
+	})
+	t.Run("mysql", func(t *testing.T) {
+		dsn := os.Getenv("MYSQL_TEST_DSN")
+		if dsn == "" {
+			t.Skip("MYSQL_TEST_DSN is not configured")
+		}
+		cfg := config.Load()
+		cfg.Database = config.Database{Driver: "mysql", DSN: dsn}
+		testAssignmentSummaryUpgradeAndEditing(t, cfg)
+	})
+}
+
+func testAssignmentSummaryUpgradeAndEditing(t *testing.T, cfg config.Config) {
+	t.Helper()
+	application, err := New(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +52,7 @@ func TestAssignmentSummaryUpgradeAndEditing(t *testing.T) {
 		t.Fatal(err)
 	}
 	application.Close()
-	application, err = New(config.Load())
+	application, err = New(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +98,7 @@ func TestAssignmentSummaryUpgradeAndEditing(t *testing.T) {
 	}
 	// A subsequent startup must retain a filled summary and all existing content.
 	application.Close()
-	application, err = New(config.Load())
+	application, err = New(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
