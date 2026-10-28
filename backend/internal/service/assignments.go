@@ -3,6 +3,7 @@ package service
 import (
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"gorm.io/gorm"
 
@@ -22,6 +23,10 @@ func (svc *AssignmentService) Save(a model.Assignment, attachmentIDs []uint, act
 	defer svc.files.MutationMu.Unlock()
 	a.CreatedAt = time.Time{}
 	a.Name = strings.TrimSpace(a.Name)
+	a.Summary = strings.TrimSpace(a.Summary)
+	if utf8.RuneCountInString(a.Summary) > 200 {
+		return model.Assignment{}, Reject(400, "作业简介不超过 200 字")
+	}
 	if a.Name == "" || len(a.Name) > 200 || len(a.Description) > 2*1024*1024 {
 		return model.Assignment{}, Reject(400, "名称必填且不超过 200 字节，描述不超过 2MB")
 	}

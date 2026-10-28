@@ -40,9 +40,8 @@ export function AssignmentCategorySection({ group }: { group: AssignmentCategory
                 )}
               </div>
               <CardHeading aria-level={group.depth + 3}>{a.name}</CardHeading>
-              <p className="small muted" style={{ lineHeight: 1.7 }}>
-                {a.allow_attachments ? "支持文本与附件提交" : "纯文本提交"} ·{" "}
-                {a.multiple ? "允许多次提交" : "单次提交"}
+              <p className="assignment-summary small muted" title={a.summary}>
+                {a.summary || "暂无作业简介"}
               </p>
               <div className="card-bottom">
                 <span className="row" style={{ gap: 5 }}>

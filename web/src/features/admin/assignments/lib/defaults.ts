@@ -7,6 +7,7 @@ export const blankAssignment: Assignment = {
   deadline: null,
   sort: 0,
   description: "",
+  summary: "",
   allow_attachments: true,
   extensions: "",
   max_size: 20 * 1024 ** 2,

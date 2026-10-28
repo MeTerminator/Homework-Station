@@ -61,6 +61,7 @@ export function AssignmentEditor() {
           deadline: form.deadline,
           sort: form.sort,
           description: form.description,
+          summary: form.summary,
           allow_attachments: form.allow_attachments,
           extensions: form.extensions,
           max_size: form.max_size,

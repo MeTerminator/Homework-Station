@@ -1,6 +1,7 @@
 import { Field } from "@/components/form/field";
 import { Panel } from "@/components/panel";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { CategorySelect } from "@/features/categories/components/category-select";
 import { localDateTime } from "@/lib/format";
 import type { Assignment, Category } from "@/types/models";
@@ -30,6 +31,15 @@ export function AssignmentBasicInfo({
             cats={cats}
             value={form.category_id}
             onChange={(v) => onChangeField("category_id", v)}
+          />
+        </Field>
+        <Field label="作业简介（可选）" hint="显示在作业卡片中，最多 200 字。" full>
+          <Textarea
+            value={form.summary}
+            maxLength={200}
+            rows={3}
+            onChange={(e) => onChangeField("summary", e.target.value)}
+            placeholder="简要介绍本次作业的内容或目标"
           />
         </Field>
         <Field label="发布状态">

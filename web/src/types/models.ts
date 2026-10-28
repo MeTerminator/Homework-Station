@@ -25,6 +25,7 @@ export interface Assignment {
   deadline: string | null;
   sort: number;
   description: string;
+  summary: string;
   allow_attachments: boolean;
   extensions: string;
   max_size: number;

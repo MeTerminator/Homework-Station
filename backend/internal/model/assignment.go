@@ -10,6 +10,7 @@ type Assignment struct {
 	Deadline         *time.Time `json:"deadline"`
 	Sort             int        `json:"sort"`
 	Description      string     `json:"description" gorm:"type:text"`
+	Summary          string     `json:"summary" gorm:"type:text;not null;default:''"`
 	AllowAttachments bool       `json:"allow_attachments"`
 	Extensions       string     `json:"extensions"`
 	MaxSize          int64      `json:"max_size"`
