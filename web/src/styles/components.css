@@ -358,16 +358,32 @@
   text-overflow: ellipsis;
 }
 
-.editor-tabs {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  gap: 10px;
+.markdown-editor {
+  min-width: 0;
+  --color-canvas-default: var(--card);
+  --color-canvas-subtle: var(--background);
+  --color-fg-default: var(--foreground);
+  --color-fg-muted: var(--muted-foreground);
+  --color-border-default: var(--border);
+  --color-accent-fg: var(--primary);
 }
 
-.editor-tabs .row {
+.markdown-editor .w-md-editor {
+  border-radius: 8px;
+}
+
+.markdown-editor .w-md-editor-toolbar {
+  flex-wrap: wrap;
   gap: 4px;
+}
+
+.markdown-editor .w-md-editor-toolbar ul {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.markdown-editor .w-md-editor-text {
+  --md-editor-font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 .error-box {
