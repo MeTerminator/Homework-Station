@@ -48,7 +48,7 @@ export function AssignmentDetail() {
     <>
       <PageHeading
         title={a?.name || "作业详情"}
-        description="查看作业要求，提交你的学习成果。"
+        description={a ? a.summary || "暂无作业简介" : ""}
       >
         <Link to="/">
           <Button variant="outline">
