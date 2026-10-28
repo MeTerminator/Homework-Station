@@ -9,7 +9,7 @@ install-dev: install
 	.venv/bin/python -m pip install -r requirements-dev.txt
 
 dev-backend:
-	cd backend && go run ./cmd/server
+	cd backend && go run -tags dev ./cmd/server
 
 dev-web:
 	cd web && npm run dev
@@ -19,10 +19,10 @@ build:
 	cd backend && go build -o bin/homework-station ./cmd/server
 
 test:
-	cd backend && go test ./...
-	python3 -m unittest discover -s tests -p 'test_*.py'
 	cd web && npm test
 	cd web && npm run build
+	cd backend && go test ./...
+	python3 -m unittest discover -s tests -p 'test_*.py'
 
 format:
 	python3 scripts/format.py

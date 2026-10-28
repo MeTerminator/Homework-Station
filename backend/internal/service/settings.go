@@ -9,6 +9,7 @@ import (
 	"homework-station/internal/model"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type SettingsService struct{ db *gorm.DB }
@@ -16,7 +17,7 @@ type SettingsService struct{ db *gorm.DB }
 func NewSettingsService(db *gorm.DB) *SettingsService { return &SettingsService{db: db} }
 func (s *SettingsService) Get(key string) string {
 	var setting model.Setting
-	s.db.First(&setting, "key = ?", key)
+	s.db.First(&setting, clause.Eq{Column: "key", Value: key})
 	return setting.Value
 }
 func (s *SettingsService) All() map[string]string {
@@ -30,7 +31,7 @@ func (s *SettingsService) All() map[string]string {
 }
 func (s *SettingsService) IdentityConfig() (map[string]string, error) {
 	var rows []model.Setting
-	if err := s.db.Where("key LIKE ?", "realname_%").Find(&rows).Error; err != nil {
+	if err := s.db.Where(clause.Like{Column: "key", Value: "realname_%"}).Find(&rows).Error; err != nil {
 		return nil, Reject(500, "读取实名认证配置失败")
 	}
 	values := map[string]string{}
@@ -95,7 +96,7 @@ func (s *SettingsService) Update(m map[string]string) error {
 	}
 	e := s.db.Transaction(func(tx *gorm.DB) error {
 		for k, v := range m {
-			if e := tx.Model(&model.Setting{}).Where("key = ?", k).Update("value", v).Error; e != nil {
+			if e := tx.Model(&model.Setting{}).Where(clause.Eq{Column: "key", Value: k}).Update("value", v).Error; e != nil {
 				return e
 			}
 		}

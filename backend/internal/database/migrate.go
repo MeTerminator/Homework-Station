@@ -35,7 +35,7 @@ func Initialize(db *gorm.DB, bindingSecret string, output *log.Logger) error {
 	defaults := config.DefaultSettings(config.Or(bindingSecret, security.RandomHex(32)))
 	for k, v := range defaults {
 		var s model.Setting
-		if e := db.Where("key = ?", k).Attrs(model.Setting{Value: v}).FirstOrCreate(&s, model.Setting{Key: k}).Error; e != nil {
+		if e := db.Where(model.Setting{Key: k}).Attrs(model.Setting{Value: v}).FirstOrCreate(&s).Error; e != nil {
 			return e
 		}
 	}

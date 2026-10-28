@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -34,8 +35,13 @@ func run() error {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	listener, err := net.Listen("tcp", server.Addr)
+	if err != nil {
+		return err
+	}
+	defer listener.Close()
 	done := make(chan error, 1)
-	go func() { done <- server.ListenAndServe() }()
+	go func() { done <- server.Serve(listener) }()
 	log.Println("作业驿站启动，地址 http://localhost:" + application.Config.Port)
 	select {
 	case err := <-done:

@@ -2,13 +2,11 @@ package router
 
 import (
 	"log"
-	"os"
-	"path/filepath"
 	"strings"
 
+	"homework-station/internal/frontend"
 	"homework-station/internal/http/handler"
 	"homework-station/internal/http/middleware"
-	"homework-station/internal/http/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -65,22 +63,6 @@ func New(h *handler.Handler, output *log.Logger) *gin.Engine {
 	ad.GET("/attachments", h.ListAllAttachments)
 	ad.DELETE("/attachments/:id", h.DeleteAttachment)
 	ad.DELETE("/submissions/:id", h.DeleteSubmission)
-	dist := h.Config.WebDist
-	r.NoRoute(func(c *gin.Context) {
-		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
-			response.Error(c, 404, "接口不存在")
-			return
-		}
-		p := filepath.Join(dist, filepath.Clean("/"+c.Request.URL.Path))
-		if stat, e := os.Stat(p); e == nil && !stat.IsDir() {
-			c.File(p)
-			return
-		}
-		if _, e := os.Stat(filepath.Join(dist, "index.html")); e == nil {
-			c.File(filepath.Join(dist, "index.html"))
-		} else {
-			response.Error(c, 404, "请先构建前端，开发时访问 http://localhost:5173")
-		}
-	})
+	r.NoRoute(frontendHandler(frontend.Files()))
 	return r
 }

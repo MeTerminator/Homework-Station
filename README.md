@@ -24,14 +24,13 @@
 ```bash
 make install
 make build
-cd backend
-./bin/homework-station
+./backend/bin/homework-station
 ```
 
 - 用户前台：[http://localhost:8080](http://localhost:8080)
 - 管理后台：[http://localhost:8080/admin](http://localhost:8080/admin)
 
-后端同时提供构建后的前端，无需额外启动前端服务。退出时按 `Ctrl+C`。
+`make build` 先构建前端，再通过 Go `embed` 将全部页面、JavaScript、CSS 等资源编译进 `backend/bin/homework-station`。部署时只需这个可执行文件，无需复制前端目录；运行数据默认保存在启动目录下的 `./data/`。退出时按 `Ctrl+C`。
 
 开发时使用两个终端，分别在项目根目录运行：
 
@@ -43,23 +42,23 @@ make dev-backend
 make dev-web
 ```
 
-开发页面地址为 [http://localhost:5173](http://localhost:5173)，Vite 将 `/api` 请求代理到 8080。
+开发页面地址为 [http://localhost:5173](http://localhost:5173)，Vite 将 `/api` 请求代理到 8080。`make dev-backend` 使用 `dev` 构建标签，不要求预先构建前端；默认的 Go 构建会嵌入前端，需要先执行 `cd web && npm run build`。
 
 ## 下载发布包与手动发布
 
 在 GitHub 仓库的 **Actions → Release → Run workflow** 中选择要发布的分支，输入版本号（例如 `1.2.3`、`v1.2.3` 或 `1.2.3-rc.1`），点击 **Run workflow**。工作流必须先合入默认分支，才会显示手动运行入口。
 
-工作流先执行完整 CI 检查，再构建前端，以及启用 CGO 的各平台后端；所有平台的测试与构建成功后，自动创建指向本次构建提交的 `v版本号` 标签和 GitHub Release，生成更新说明并上传发布包及 `SHA256SUMS`。已有标签会被拒绝，预发布版本自动标记为 Pre-release；无需配置额外 Token，工作流使用内置 `GITHUB_TOKEN`，仅发布任务具有 `contents: write` 权限。
+工作流先执行完整 CI 检查，再构建前端并嵌入启用 CGO 的各平台后端；所有平台的测试与构建成功后，自动创建指向本次构建提交的 `v版本号` 标签和 GitHub Release，生成更新说明并上传各平台的单文件程序及 `SHA256SUMS`。已有标签会被拒绝，预发布版本自动标记为 Pre-release；无需配置额外 Token，工作流使用内置 `GITHUB_TOKEN`，仅发布任务具有 `contents: write` 权限。
 
-| 发布包平台 | 架构          | 格式      | 运行要求                                            |
-| ---------- | ------------- | --------- | --------------------------------------------------- |
-| Linux      | amd64 / arm64 | `.tar.gz` | glibc 2.35+，如 Ubuntu 22.04+；不适用于 Alpine/musl |
-| Windows    | amd64         | `.zip`    | 64 位 Windows                                       |
-| macOS      | arm64         | `.tar.gz` | Apple Silicon，macOS 15+；二进制未经签名或公证      |
+| 平台    | 架构          | 文件名（以 v1.2.3 为例）                                                      | 运行要求                                            |
+| ------- | ------------- | ----------------------------------------------------------------------------- | --------------------------------------------------- |
+| Linux   | amd64 / arm64 | `homework-station-v1.2.3-linux-amd64` / `homework-station-v1.2.3-linux-arm64` | glibc 2.35+，如 Ubuntu 22.04+；不适用于 Alpine/musl |
+| Windows | amd64         | `homework-station-v1.2.3-windows-amd64.exe`                                   | 64 位 Windows                                       |
+| macOS   | arm64         | `homework-station-v1.2.3-darwin-arm64`                                        | Apple Silicon，macOS 15+；二进制未经签名或公证      |
 
-发布包包含后端程序、完整前端、配置模板、README 和 `VERSION`，无需安装 Go 或 Node.js。解压后进入包内的 `backend/` 目录，Linux/macOS 执行 `./bin/homework-station`，Windows PowerShell 执行 `.\bin\homework-station.exe`，然后访问 [http://localhost:8080](http://localhost:8080)。保持包内的 `backend/` 与 `web/dist/` 相对位置不变；程序不会自动加载 `.env`，自定义配置见下文。
+下载对应平台的单个可执行文件即可，无需安装 Go、Node.js 或解压发布包。Linux/macOS 下载后先执行 `chmod +x 文件名`，再执行 `./文件名`；Windows PowerShell 执行 `.\文件名.exe`，然后访问 [http://localhost:8080](http://localhost:8080)。所有前端资源直接从内存中的嵌入文件系统提供，不依赖外部 `web/dist` 目录，也不会在启动时解压到磁盘。
 
-发布包不包含数据库、附件、运行日志或本地密钥。更新时请保留原有数据目录和配置。
+运行时数据库、附件、日志和密钥保存在 `DATA_DIR`（默认 `./data`），不会打进二进制。更新时停止旧进程、替换可执行文件，再启动即可，保留原有数据目录和环境变量配置。Supervisor 可直接启动该文件并通过 `environment=` 注入配置，原有 `WEB_DIST` 环境变量可删除。
 
 ## 环境变量
 
@@ -68,11 +67,10 @@ make dev-web
 ```bash
 cp .env.example .env
 # 编辑 .env 后执行：
-cd backend
 set -a
-. ../.env
+. ./.env
 set +a
-./bin/homework-station
+./backend/bin/homework-station
 ```
 
 包含空格或特殊字符的环境变量值需要按 shell 语法加引号。Docker Compose 会自动读取根目录 `.env`，无需手动加载。
@@ -81,7 +79,6 @@ set +a
 | ---------------- | ------------------------------------------- | ---------------------------------------------------------- |
 | `PORT`           | `8080`                                      | HTTP 端口                                                  |
 | `DATA_DIR`       | `./data`                                    | 数据库、附件、分片、日志和自动生成的会话密钥目录           |
-| `WEB_DIST`       | `../web/dist`                               | 前端构建目录                                               |
 | `DB_DRIVER`      | `sqlite`                                    | `sqlite`、`mysql`、`postgres`，兼容 `postgresql` / `pgsql` |
 | `DB_DSN`         | SQLite 为 `DATA_DIR/homework.db`            | 完整数据库连接串，优先于分项配置                           |
 | `DB_HOST`        | `localhost`                                 | MySQL / PostgreSQL 地址                                    |
@@ -95,13 +92,15 @@ set +a
 | `COOKIE_SECURE`  | `false`                                     | HTTPS 部署设为 `true`                                      |
 | `GIN_MODE`       | Gin 默认值                                  | 生产环境可设为 `release`                                   |
 
-路径相对**后端进程的工作目录**。按上面的方式在 `backend/` 启动时，默认数据目录为 `backend/data/`。
+路径相对**后端进程的工作目录**。按上面的方式在项目根目录启动时，默认数据目录为 `./data/`；Supervisor 部署时以其 `directory=` 指定的目录为准。
 
 ### 数据库选择
 
 未配置时直接使用 SQLite，无需独立数据库服务。
 
 使用 MySQL 时设置 `DB_DRIVER=mysql`，使用 PostgreSQL 时设置 `DB_DRIVER=postgres`，并填写对应的地址、端口、账号、密码与库名。启动时后端尝试初始化目标库并执行表结构迁移，数据库账号需要相应的建库与迁移权限；也可提前由数据库管理员建库并授予运行账号所需权限。
+
+建库通过 GORM 连接执行数据库对应的 `CREATE DATABASE` 语句；GORM 没有统一的建库接口。表、列、索引和外键则由 `AutoMigrate` 根据 Go 模型自动创建与迁移，无需手工导入 SQL。
 
 完整 DSN 格式如下，均为占位示例，需替换为自己的连接信息：
 
@@ -308,4 +307,6 @@ make format-check
 
 `make format-check` 不会修改文件，存在差异时以非零状态退出。也可以进入 `web/` 单独运行 `npm run format` 或 `npm run format:check`。
 
-`.vscode/` 提供保存时格式化设置及推荐扩展；GitHub Actions 会执行格式检查、测试、生产构建和 `go vet`。依赖、运行数据、日志、密钥与构建产物均排除在格式化范围外。
+`.vscode/` 提供保存时格式化设置及推荐扩展；GitHub Actions 会执行格式检查、测试、生产构建和 `go vet`，并使用独立的 MySQL 8.0 服务测试初始化、配置读写与重启后的配置保留。依赖、运行数据、日志、密钥与构建产物均排除在格式化范围外。
+
+本地默认测试使用临时 SQLite 数据库；若要执行 MySQL 回归测试，在运行 `make test` 前设置 `MYSQL_TEST_DSN`，指向可丢弃的专用测试库（例如 `root:test-password@tcp(127.0.0.1:3306)/homework_ci?charset=utf8mb4&parseTime=True&loc=UTC`）。该测试会初始化表、管理员和配置并修改配置，不要使用生产数据库；未设置时跳过此测试。

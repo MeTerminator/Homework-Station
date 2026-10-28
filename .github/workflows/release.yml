@@ -71,7 +71,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
-          path: web/dist/
+          path: backend/internal/frontend/dist/
           if-no-files-found: error
           retention-days: 1
 
@@ -115,13 +115,15 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: frontend-dist
-          path: web/dist
+          path: backend/internal/frontend/dist
       - name: Test backend on target platform
         working-directory: backend
         run: go test ./...
       - name: Build backend
         working-directory: backend
         run: go build -trimpath -ldflags="-s -w" -o "bin/homework-station${BINARY_EXTENSION}" ./cmd/server
+      - name: Verify single-file deployment
+        run: python scripts/smoke_binary.py "backend/bin/homework-station${BINARY_EXTENSION}"
       - name: Package release
         run: python scripts/package_release.py
       - uses: actions/upload-artifact@v4
@@ -153,10 +155,10 @@ jobs:
         run: |
           set -euo pipefail
           for target in linux-amd64 linux-arm64 darwin-arm64; do
-            test -s "homework-station-${RELEASE_TAG}-${target}.tar.gz"
+            test -s "homework-station-${RELEASE_TAG}-${target}"
           done
-          test -s "homework-station-${RELEASE_TAG}-windows-amd64.zip"
-          sha256sum *.tar.gz *.zip > SHA256SUMS
+          test -s "homework-station-${RELEASE_TAG}-windows-amd64.exe"
+          sha256sum homework-station-* > SHA256SUMS
       - name: Publish GitHub Release
         shell: bash
         run: |
@@ -165,7 +167,7 @@ jobs:
           if [[ "$PRERELEASE" == true ]]; then
             flags+=(--prerelease --latest=false)
           fi
-          gh release create "$RELEASE_TAG" release/*.tar.gz release/*.zip release/SHA256SUMS \
+          gh release create "$RELEASE_TAG" release/homework-station-* release/SHA256SUMS \
             --target "$GITHUB_SHA" \
             --title "$RELEASE_TAG" \
             --draft \

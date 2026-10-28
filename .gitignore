@@ -2,6 +2,7 @@ data/
 backend/data/
 web/node_modules/
 web/dist/
+backend/internal/frontend/dist/
 .env
 *.log
 .DS_Store

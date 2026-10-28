@@ -10,6 +10,19 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci-test-only
+          MYSQL_DATABASE: homework_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-test-only"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -27,5 +40,7 @@ jobs:
       - run: make install-dev
       - run: make format-check
       - run: make test
+        env:
+          MYSQL_TEST_DSN: "root:ci-test-only@tcp(127.0.0.1:3306)/homework_ci?charset=utf8mb4&parseTime=True&loc=UTC"
       - run: go vet ./...
         working-directory: backend

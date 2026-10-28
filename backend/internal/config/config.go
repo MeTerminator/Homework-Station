@@ -16,7 +16,6 @@ type Database struct {
 type Config struct {
 	Port          string
 	DataDir       string
-	WebDist       string
 	SessionSecret string
 	BindingSecret string
 	CookieSecure  bool
@@ -35,7 +34,6 @@ func Load() Config {
 	return Config{
 		Port:          Or(os.Getenv("PORT"), "8080"),
 		DataDir:       Or(os.Getenv("DATA_DIR"), "./data"),
-		WebDist:       Or(os.Getenv("WEB_DIST"), "../web/dist"),
 		SessionSecret: os.Getenv("JWT_SECRET"),
 		BindingSecret: os.Getenv("BINDING_SECRET"),
 		CookieSecure:  os.Getenv("COOKIE_SECURE") == "true",
