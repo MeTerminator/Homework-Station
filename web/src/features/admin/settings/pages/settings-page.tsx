@@ -19,7 +19,22 @@ export function SettingsPage() {
   useEffect(() => {
     if (q.data) setForm(q.data);
   }, [q.data]);
-  const set = (k: string, v: string) => setForm({ ...form, [k]: v });
+  const set = (k: string, v: string) => setForm((current) => ({ ...current, [k]: v }));
+  const [uploading, setUploading] = useState(false);
+  const upload = async (key: string, file: File) => {
+    setUploading(true);
+    await perform(async () => {
+      if (file.size > 2 * 1024 ** 2) throw new Error("图片不能超过 2MB");
+      const body = new FormData();
+      body.append("image", file);
+      const result = await api<{ url: string }>("/admin/settings/images", {
+        method: "POST",
+        body,
+      });
+      set(key, result.url);
+    });
+    setUploading(false);
+  };
   return (
     <>
       <PageHeading title="站点设置" description="管理站点信息、上传规则与账号绑定。" />
@@ -31,21 +46,86 @@ export function SettingsPage() {
             setBusy(true);
             perform(async () => {
               await api("/admin/settings", json("PUT", form));
-              refreshTitle();
+              await refreshTitle();
               q.reload();
             }, "设置已保存").finally(() => setBusy(false));
           }}
         >
           <Panel title="基础设置">
             <div className="form-grid">
-              <Field label="站点标题">
+              <Field
+                label="站点标题"
+                hint="显示在登录页和导航栏，支持中文或英文，最多 120 个字符。"
+              >
                 <Input
                   required
+                  disabled={busy}
                   maxLength={120}
                   value={form.site_title || ""}
                   onChange={(e) => set("site_title", e.target.value)}
                 />
               </Field>
+              <Field label="网站标题" hint="浏览器标签页显示的标题；留空时使用站点标题。">
+                <Input
+                  maxLength={120}
+                  value={form.browser_title || ""}
+                  onChange={(e) => set("browser_title", e.target.value)}
+                  disabled={busy}
+                  placeholder={form.site_title || "作业驿站"}
+                />
+              </Field>
+              {(
+                [
+                  ["site_logo", "页面 Logo"],
+                  ["site_icon", "站点图标（Icon）"],
+                ] as const
+              ).map(([key, label]) => (
+                <div className="stack" key={key}>
+                  <Field
+                    label={`${label}地址`}
+                    hint="填写 HTTP(S) 图片链接或站内路径；留空恢复默认。"
+                  >
+                    <Input
+                      value={form[key] || ""}
+                      onChange={(e) => set(key, e.target.value)}
+                      disabled={busy || uploading}
+                      placeholder="https://example.com/image.png"
+                    />
+                  </Field>
+                  <Field
+                    label={`上传${label}`}
+                    hint="支持 PNG、JPEG、GIF、WebP，最大 2MB、400 万像素；上传后点击保存设置生效。Icon 建议使用正方形图片。"
+                  >
+                    <Input
+                      type="file"
+                      accept="image/png,image/jpeg,image/gif,image/webp"
+                      disabled={busy || uploading}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = "";
+                        if (file) void upload(key, file);
+                      }}
+                    />
+                  </Field>
+                  {form[key] && (
+                    <img
+                      className="branding-preview"
+                      src={form[key]}
+                      alt={`${label}预览`}
+                    />
+                  )}
+                  {form[key] && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={busy || uploading}
+                      onClick={() => set(key, "")}
+                    >
+                      恢复默认{label}
+                    </Button>
+                  )}
+                </div>
+              ))}
               <Field label="用户注册">
                 <select
                   value={form.registration_enabled || "true"}
@@ -173,9 +253,9 @@ export function SettingsPage() {
             </Field>
           </Panel>
           <div>
-            <Button type="submit" disabled={busy}>
+            <Button type="submit" disabled={busy || uploading}>
               <Save size={16} />
-              {busy ? "保存中…" : "保存设置"}
+              {uploading ? "图片上传中…" : busy ? "保存中…" : "保存设置"}
             </Button>
           </div>
         </form>

@@ -1,8 +1,10 @@
 package service
 
 import (
+	"net/url"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"homework-station/internal/model"
 
@@ -41,8 +43,25 @@ func (s *SettingsService) Update(m map[string]string) error {
 	for k, v := range m {
 		switch k {
 		case "site_title":
-			if strings.TrimSpace(v) == "" || len(v) > 120 {
-				return Reject(400, "站点标题需为 1–120 字节")
+			m[k] = strings.TrimSpace(v)
+			if m[k] == "" || utf8.RuneCountInString(m[k]) > 120 {
+				return Reject(400, "站点标题需为 1–120 个字符")
+			}
+		case "browser_title":
+			m[k] = strings.TrimSpace(v)
+			if utf8.RuneCountInString(m[k]) > 120 {
+				return Reject(400, "网站标题最多 120 个字符")
+			}
+		case "site_logo", "site_icon":
+			v = strings.TrimSpace(v)
+			m[k] = v
+			if v != "" {
+				u, err := url.Parse(v)
+				local := strings.HasPrefix(v, "/") && !strings.HasPrefix(v, "//") && !strings.Contains(v, "\\")
+				remote := err == nil && (u.Scheme == "https" || u.Scheme == "http") && u.Host != "" && u.User == nil
+				if len(v) > 2048 || err != nil || (!local && !remote) {
+					return Reject(400, "图片地址需为站内绝对路径或 HTTP(S) 链接")
+				}
 			}
 		case "default_max_size", "avatar_max_size":
 			n, e := strconv.ParseInt(v, 10, 64)

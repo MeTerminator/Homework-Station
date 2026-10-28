@@ -20,8 +20,9 @@ func New(h *handler.Handler, output *log.Logger) *gin.Engine {
 	r.Use(gin.Recovery(), gin.LoggerWithWriter(output.Writer()), middleware.Security())
 	r.GET("/api/health", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
 	r.GET("/api/public-settings", func(c *gin.Context) {
-		c.JSON(200, gin.H{"site_title": h.Settings.Get("site_title"), "registration_enabled": h.Settings.Get("registration_enabled"), "realname_enabled": strings.TrimSpace(h.Settings.Get("realname_api_url")) != ""})
+		c.JSON(200, gin.H{"site_title": h.Settings.Get("site_title"), "browser_title": h.Settings.Get("browser_title"), "site_logo": h.Settings.Get("site_logo"), "site_icon": h.Settings.Get("site_icon"), "registration_enabled": h.Settings.Get("registration_enabled"), "realname_enabled": strings.TrimSpace(h.Settings.Get("realname_api_url")) != ""})
 	})
+	r.GET("/api/branding/:name", h.BrandingImage)
 	r.GET("/api/captcha", h.CaptchaHandler)
 	r.POST("/api/register", limiter.Middleware(), h.Register)
 	r.POST("/api/login", limiter.Middleware(), h.Login)
@@ -49,6 +50,7 @@ func New(h *handler.Handler, output *log.Logger) *gin.Engine {
 	ad.GET("/overview", h.Overview)
 	ad.GET("/settings", h.GetSettings)
 	ad.PUT("/settings", h.PutSettings)
+	ad.POST("/settings/images", h.UploadBrandingImage)
 	ad.POST("/categories", h.SaveCategory)
 	ad.PUT("/categories/:id", h.SaveCategory)
 	ad.DELETE("/categories/:id", h.DeleteCategory)

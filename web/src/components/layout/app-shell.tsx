@@ -38,7 +38,7 @@ export const adminNav = [
 ] as const;
 
 export function Shell({ admin = false }: { admin?: boolean }) {
-  const { user, setUser, title } = useSession();
+  const { user, setUser, title, logo } = useSession();
   const nav = useNavigate();
   const loc = useLocation();
   const [menu, setMenu] = useState(false);
@@ -60,9 +60,9 @@ export function Shell({ admin = false }: { admin?: boolean }) {
       <aside className={`sidebar ${menu ? "open" : ""}`}>
         <Link to={admin ? "/admin" : "/"} className="brand">
           <span className="brand-icon">
-            <BookOpen size={22} />
+            {logo ? <img src={logo} alt="" /> : <BookOpen size={22} />}
           </span>
-          {title}
+          <span className="brand-name">{title}</span>
         </Link>
         <div className="nav-section">{admin ? "工作空间" : "学习空间"}</div>
         <nav>

@@ -4,6 +4,9 @@ package config
 func DefaultSettings(bindingSecret string) map[string]string {
 	return map[string]string{
 		"site_title":             "作业驿站",
+		"browser_title":          "",
+		"site_logo":              "",
+		"site_icon":              "",
 		"default_extensions":     "",
 		"default_max_size":       "20971520",
 		"avatar_max_size":        "10485760",

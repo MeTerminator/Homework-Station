@@ -7,7 +7,8 @@ export interface Session {
   setUser: (u: User | null) => void;
   loading: boolean;
   title: string;
-  refreshTitle: () => void;
+  logo: string;
+  refreshTitle: () => Promise<void>;
 }
 
 export const SessionContext = createContext<Session>(null!);
@@ -18,11 +19,29 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("作业驿站");
+  const [logo, setLogo] = useState("");
   const refreshTitle = () => {
-    api<{ site_title: string }>("/public-settings")
+    return api<{
+      site_title: string;
+      browser_title: string;
+      site_logo: string;
+      site_icon: string;
+    }>("/public-settings")
       .then((v) => {
-        setTitle(v.site_title);
-        document.title = v.site_title;
+        setTitle(v.site_title || "作业驿站");
+        setLogo(v.site_logo || "");
+        document.title = v.browser_title || v.site_title || "作业驿站";
+        let icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+        if (v.site_icon) {
+          if (!icon) {
+            icon = document.createElement("link");
+            icon.rel = "icon";
+            document.head.appendChild(icon);
+          }
+          icon.href = v.site_icon;
+        } else {
+          icon?.remove();
+        }
       })
       .catch(() => {});
   };
@@ -37,7 +56,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("session-expired", expired);
   }, []);
   return (
-    <SessionContext.Provider value={{ user, setUser, loading, title, refreshTitle }}>
+    <SessionContext.Provider
+      value={{ user, setUser, loading, title, logo, refreshTitle }}
+    >
       {children}
     </SessionContext.Provider>
   );

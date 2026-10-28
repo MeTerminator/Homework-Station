@@ -10,7 +10,7 @@ import { ArrowRight, BookOpen, GraduationCap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 export function AuthPage() {
-  const { user, setUser, title } = useSession();
+  const { user, setUser, title, logo } = useSession();
   const nav = useNavigate();
   const [register, setRegister] = useState(false);
   const [username, setUsername] = useState("");
@@ -29,9 +29,9 @@ export function AuthPage() {
       <div className="auth-art">
         <div className="brand">
           <span className="brand-icon">
-            <BookOpen size={22} />
+            {logo ? <img src={logo} alt="" /> : <BookOpen size={22} />}
           </span>
-          {title}
+          <span className="brand-name">{title}</span>
         </div>
         <div className="orb" />
         <div className="auth-quote">
