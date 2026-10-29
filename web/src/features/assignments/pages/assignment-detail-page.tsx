@@ -59,8 +59,8 @@ export function AssignmentDetail() {
       </PageHeading>
       <LoadState {...q} retry={q.reload}>
         {a && (
-          <div className="stack">
-            <Panel>
+          <div className="assignment-detail-layout">
+            <Panel className="assignment-detail-description">
               <div className="row" style={{ marginBottom: 22 }}>
                 <Status status={a.status} />
                 <span className="muted small row">
@@ -86,127 +86,133 @@ export function AssignmentDetail() {
                 </div>
               )}
             </Panel>
-            <Panel
-              title="提交作业"
-              action={
-                <span className="muted small">
-                  {a.multiple ? "可多次提交" : "仅允许一次有效提交"}
-                </span>
-              }
-            >
-              {(a.require_real_name || a.require_qq) && (
-                <p className="muted small" style={{ marginBottom: 16 }}>
-                  提交条件：
-                  {[
-                    a.require_real_name ? "完成实名认证" : "",
-                    a.require_qq ? "绑定 QQ" : "",
-                  ]
-                    .filter(Boolean)
-                    .join("、")}
-                  {a.require_real_name && a.require_qq ? "（需全部满足）" : ""}
-                </p>
-              )}
-              {canSubmit && (missingRealName || missingQQ) ? (
-                <div className="note">
-                  请先
-                  {[missingRealName ? "完成实名认证" : "", missingQQ ? "绑定 QQ" : ""]
-                    .filter(Boolean)
-                    .join("并")}
-                  后再提交作业。
-                  <Link className="link" to="/profile">
-                    前往个人信息
-                  </Link>
-                </div>
-              ) : canSubmit ? (
-                <form
-                  className="stack"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    setBusy(true);
-                    perform(async () => {
-                      await api(
-                        `/assignments/${id}/submissions`,
-                        json("POST", {
-                          content,
-                          attachment_ids: files.map((f) => f.id),
-                        }),
-                      );
-                      setContent("");
-                      setFiles([]);
-                      q.reload();
-                      mine.reload();
-                      setVersion((v) => v + 1);
-                    }, "作业提交成功").finally(() => setBusy(false));
-                  }}
-                >
-                  <Field label="作业内容">
-                    <Textarea
-                      rows={7}
-                      value={content}
-                      onChange={(e) => setContent(e.target.value)}
-                      placeholder="在这里填写你的作业内容、思路或补充说明…"
-                    />
-                  </Field>
-                  {a.allow_attachments && (
-                    <Field
-                      label="作业附件"
-                      hint={`允许的后缀：${a.extensions || "全部"}；单个附件最大 ${sizeText(a.max_size)}`}
-                    >
-                      <UploadBox
-                        files={files}
-                        onChange={setFiles}
-                        assignmentID={a.id}
-                        maxSize={a.max_size}
-                        extensions={a.extensions}
-                        onBusy={setUploading}
+            <div className="assignment-detail-sidebar stack">
+              <Panel
+                title="提交作业"
+                action={
+                  <span className="muted small">
+                    {a.multiple ? "可多次提交" : "仅允许一次有效提交"}
+                  </span>
+                }
+              >
+                {(a.require_real_name || a.require_qq) && (
+                  <p className="muted small" style={{ marginBottom: 16 }}>
+                    提交条件：
+                    {[
+                      a.require_real_name ? "完成实名认证" : "",
+                      a.require_qq ? "绑定 QQ" : "",
+                    ]
+                      .filter(Boolean)
+                      .join("、")}
+                    {a.require_real_name && a.require_qq ? "（需全部满足）" : ""}
+                  </p>
+                )}
+                {canSubmit && (missingRealName || missingQQ) ? (
+                  <div className="note">
+                    请先
+                    {[missingRealName ? "完成实名认证" : "", missingQQ ? "绑定 QQ" : ""]
+                      .filter(Boolean)
+                      .join("并")}
+                    后再提交作业。
+                    <Link className="link" to="/profile">
+                      前往个人信息
+                    </Link>
+                  </div>
+                ) : canSubmit ? (
+                  <form
+                    className="stack"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      setBusy(true);
+                      perform(async () => {
+                        await api(
+                          `/assignments/${id}/submissions`,
+                          json("POST", {
+                            content,
+                            attachment_ids: files.map((f) => f.id),
+                          }),
+                        );
+                        setContent("");
+                        setFiles([]);
+                        q.reload();
+                        mine.reload();
+                        setVersion((v) => v + 1);
+                      }, "作业提交成功").finally(() => setBusy(false));
+                    }}
+                  >
+                    <Field label="作业内容">
+                      <Textarea
+                        rows={7}
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        placeholder="在这里填写你的作业内容、思路或补充说明…"
                       />
                     </Field>
-                  )}
-                  <div className="row" style={{ justifyContent: "space-between" }}>
-                    <span className="small muted">
-                      {a.withdraw ? "提交后可以撤回" : "提交后不允许撤回"}
-                    </span>
-                    <Button
-                      type="submit"
-                      disabled={busy || uploading || (!content.trim() && !files.length)}
-                    >
-                      <Send size={15} />
-                      {busy ? "正在提交…" : "提交作业"}
-                    </Button>
-                  </div>
-                </form>
-              ) : (
-                <div className="note">
-                  {a.status === "closed" ||
-                  (a.deadline && new Date(a.deadline).getTime() <= Date.now())
-                    ? "此作业已截止。"
-                    : a.status === "hidden"
-                      ? "此作业未发布。"
-                      : "你已完成提交，此作业不允许重复提交。"}
-                </div>
-              )}
-            </Panel>
-            {a.withdraw && active.length > 0 && (
-              <Panel title="撤回提交">
-                <div className="stack" style={{ gap: 12 }}>
-                  {active.map((s) => (
-                    <div
-                      className="row"
-                      style={{ justifyContent: "space-between" }}
-                      key={s.id}
-                    >
+                    {a.allow_attachments && (
+                      <Field
+                        label="作业附件"
+                        hint={`允许的后缀：${a.extensions || "全部"}；单个附件最大 ${sizeText(a.max_size)}`}
+                      >
+                        <UploadBox
+                          files={files}
+                          onChange={setFiles}
+                          assignmentID={a.id}
+                          maxSize={a.max_size}
+                          extensions={a.extensions}
+                          onBusy={setUploading}
+                        />
+                      </Field>
+                    )}
+                    <div className="row" style={{ justifyContent: "space-between" }}>
                       <span className="small muted">
-                        提交 #{s.id} · {dateText(s.created_at)}
+                        {a.withdraw ? "提交后可以撤回" : "提交后不允许撤回"}
                       </span>
-                      <Button variant="outline" size="sm" onClick={() => setWithdraw(s)}>
-                        撤回这次提交
+                      <Button
+                        type="submit"
+                        disabled={busy || uploading || (!content.trim() && !files.length)}
+                      >
+                        <Send size={15} />
+                        {busy ? "正在提交…" : "提交作业"}
                       </Button>
                     </div>
-                  ))}
-                </div>
+                  </form>
+                ) : (
+                  <div className="note">
+                    {a.status === "closed" ||
+                    (a.deadline && new Date(a.deadline).getTime() <= Date.now())
+                      ? "此作业已截止。"
+                      : a.status === "hidden"
+                        ? "此作业未发布。"
+                        : "你已完成提交，此作业不允许重复提交。"}
+                  </div>
+                )}
               </Panel>
-            )}
-            <SubmissionHistory key={version} assignmentID={a.id} admin={false} />
+              {a.withdraw && active.length > 0 && (
+                <Panel title="撤回提交">
+                  <div className="stack" style={{ gap: 12 }}>
+                    {active.map((s) => (
+                      <div
+                        className="row"
+                        style={{ justifyContent: "space-between" }}
+                        key={s.id}
+                      >
+                        <span className="small muted">
+                          提交 #{s.id} · {dateText(s.created_at)}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setWithdraw(s)}
+                        >
+                          撤回这次提交
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </Panel>
+              )}
+              <SubmissionHistory key={version} assignmentID={a.id} admin={false} />
+            </div>
           </div>
         )}
       </LoadState>

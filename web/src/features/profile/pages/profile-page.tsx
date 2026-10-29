@@ -11,12 +11,14 @@ export function Profile() {
         description="完善个人资料，让每一份作业都有清晰的归属。"
       />
       <div className="stack">
-        <BasicProfileCard />
+        <div className="grid-two">
+          <BasicProfileCard />
+          <PasswordCard />
+        </div>
         <div className="grid-two">
           <RealNameBindingCard />
           <QQBindingCard />
         </div>
-        <PasswordCard />
       </div>
     </>
   );

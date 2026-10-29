@@ -213,3 +213,32 @@
 .assignment-browser .assignment-grid {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
 }
+
+.assignment-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.assignment-detail-description,
+.assignment-detail-sidebar,
+.assignment-detail-sidebar .panel {
+  min-width: 0;
+}
+
+.assignment-detail-sidebar {
+  position: sticky;
+  top: 24px;
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.assignment-detail-sidebar .panel {
+  padding: 20px;
+}
+
+.assignment-detail-sidebar .panel-head {
+  flex-wrap: wrap;
+}
