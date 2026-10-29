@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"homework-station/internal/model"
 
@@ -48,6 +49,10 @@ func (h *Handler) PutChunk(c *gin.Context) {
 	if e = os.Rename(tmp, h.Files.ChunkPath(f.ID, i)); e != nil {
 		os.Remove(tmp)
 		fail(c, 500, "保存失败")
+		return
+	}
+	if err := h.DB.Model(&f).Update("upload_activity_at", time.Now()).Error; err != nil {
+		fail(c, 500, "更新上传时间失败")
 		return
 	}
 	c.JSON(200, gin.H{"ok": true, "index": i})

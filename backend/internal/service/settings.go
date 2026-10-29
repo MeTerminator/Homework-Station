@@ -12,9 +12,14 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type SettingsService struct{ db *gorm.DB }
+type SettingsService struct {
+	db                   *gorm.DB
+	uploadCleanupChanged chan struct{}
+}
 
-func NewSettingsService(db *gorm.DB) *SettingsService { return &SettingsService{db: db} }
+func NewSettingsService(db *gorm.DB) *SettingsService {
+	return &SettingsService{db: db, uploadCleanupChanged: make(chan struct{}, 1)}
+}
 func (s *SettingsService) Get(key string) string {
 	var setting model.Setting
 	s.db.First(&setting, clause.Eq{Column: "key", Value: key})
@@ -41,6 +46,22 @@ func (s *SettingsService) IdentityConfig() (map[string]string, error) {
 	return values, nil
 }
 func (s *SettingsService) Update(m map[string]string) error {
+	_, valueChanged := m["upload_cleanup_value"]
+	_, unitChanged := m["upload_cleanup_unit"]
+	if valueChanged || unitChanged {
+		values := map[string]string{
+			"upload_cleanup_value": s.Get("upload_cleanup_value"),
+			"upload_cleanup_unit":  s.Get("upload_cleanup_unit"),
+		}
+		for _, key := range []string{"upload_cleanup_value", "upload_cleanup_unit"} {
+			if value, ok := m[key]; ok {
+				values[key] = value
+			}
+		}
+		if _, err := uploadRetention(values["upload_cleanup_value"], values["upload_cleanup_unit"]); err != nil {
+			return Reject(400, err.Error())
+		}
+	}
 	for k, v := range m {
 		switch k {
 		case "site_title":
@@ -86,6 +107,8 @@ func (s *SettingsService) Update(m map[string]string) error {
 			if err := validateRealNameSetting(k, v); err != nil {
 				return Reject(400, err.Error())
 			}
+		case "upload_cleanup_value", "upload_cleanup_unit":
+			// The duration and unit were validated together above.
 		case "default_extensions":
 			if len(v) > 1000 {
 				return Reject(400, "后缀设置过长")
@@ -104,6 +127,12 @@ func (s *SettingsService) Update(m map[string]string) error {
 	})
 	if e != nil {
 		return Reject(500, "保存失败")
+	}
+	if valueChanged || unitChanged {
+		select {
+		case s.uploadCleanupChanged <- struct{}{}:
+		default:
+		}
 	}
 	return nil
 }

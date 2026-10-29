@@ -18,6 +18,11 @@ const AssignmentDetail = lazy(() =>
     default: m.AssignmentDetail,
   })),
 );
+const MyAttachments = lazy(() =>
+  import("@/features/attachments/pages/my-attachments-page").then((m) => ({
+    default: m.MyAttachments,
+  })),
+);
 const Profile = lazy(() =>
   import("@/features/profile/pages/profile-page").then((m) => ({ default: m.Profile })),
 );
@@ -72,6 +77,7 @@ export function AppRouter() {
             <Route element={<Shell />}>
               <Route index element={<MyAssignments />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="attachments" element={<MyAttachments />} />
               <Route path="assignments/:id" element={<AssignmentDetail />} />
             </Route>
           </Route>

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -19,13 +20,15 @@ import (
 )
 
 type App struct {
-	Config     config.Config
-	DB         *gorm.DB
-	Router     *gin.Engine
-	Handler    *handler.Handler
-	logFile    *os.File
-	closeOnce  sync.Once
-	closeError error
+	Config        config.Config
+	DB            *gorm.DB
+	Router        *gin.Engine
+	Handler       *handler.Handler
+	logFile       *os.File
+	closeOnce     sync.Once
+	cleanupCancel context.CancelFunc
+	cleanupDone   chan struct{}
+	closeError    error
 }
 
 func New(cfg config.Config) (*App, error) {
@@ -78,10 +81,21 @@ func New(cfg config.Config) (*App, error) {
 		application.Close()
 		return nil, err
 	}
+	ctx, cancel := context.WithCancel(context.Background())
+	application.cleanupCancel = cancel
+	application.cleanupDone = make(chan struct{})
+	go func() {
+		defer close(application.cleanupDone)
+		application.Handler.Files.RunUploadCleanup(ctx, application.Handler.Settings, output)
+	}()
 	return application, nil
 }
 func (a *App) Close() error {
 	a.closeOnce.Do(func() {
+		if a.cleanupCancel != nil {
+			a.cleanupCancel()
+			<-a.cleanupDone
+		}
 		sqlDB, err := a.DB.DB()
 		if err == nil {
 			err = sqlDB.Close()

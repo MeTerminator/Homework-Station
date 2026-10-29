@@ -48,6 +48,7 @@ func New(h *handler.Handler, output *log.Logger, cfg config.Config) (*gin.Engine
 	a.PUT("/uploads/:id/chunks/:index", h.PutChunk)
 	a.POST("/uploads/:id/complete", h.CompleteUpload)
 	a.GET("/attachments", h.ListOwnAttachments)
+	a.DELETE("/attachments/:id", h.DeleteOwnAttachment)
 	a.GET("/attachments/:id/download", h.DownloadAttachment)
 	ad := a.Group("/admin", middleware.AdminOnly())
 	ad.GET("/overview", h.Overview)

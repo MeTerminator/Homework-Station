@@ -9,6 +9,8 @@ func DefaultSettings(bindingSecret string) map[string]string {
 		"site_icon":                       "",
 		"default_extensions":              "",
 		"default_max_size":                "20971520",
+		"upload_cleanup_value":            "7",
+		"upload_cleanup_unit":             "day",
 		"avatar_max_size":                 "10485760",
 		"binding_secret":                  bindingSecret,
 		"qq_binding_instructions":         "私聊机器人发送 `/绑定码`，将收到的绑定码粘贴到下方。绑定码 5 分钟内有效，请勿发送给他人。",

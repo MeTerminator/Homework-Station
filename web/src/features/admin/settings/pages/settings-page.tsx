@@ -186,6 +186,38 @@ export function SettingsPage() {
                 />
               </Field>
             </div>
+            <div className="form-grid" style={{ marginTop: 18 }}>
+              <Field
+                label="上传临时文件清理"
+                hint="默认 7 天。按最后一次上传或续传时间计算，仅自动清理超时且未完成上传的附件及分片，不影响已完成的附件与头像。月按 30 天计算；保存后生效，后台每秒至每分钟检查一次。"
+              >
+                <Input
+                  aria-label="上传临时文件保留时长"
+                  type="number"
+                  min={1}
+                  step={1}
+                  required
+                  disabled={busy}
+                  value={form.upload_cleanup_value ?? "7"}
+                  onChange={(e) => set("upload_cleanup_value", e.target.value)}
+                />
+              </Field>
+              <Field label="清理时间单位" hint="支持秒、分钟、小时、天、周、月。">
+                <select
+                  aria-label="上传临时文件保留时长单位"
+                  disabled={busy}
+                  value={form.upload_cleanup_unit ?? "day"}
+                  onChange={(e) => set("upload_cleanup_unit", e.target.value)}
+                >
+                  <option value="second">秒</option>
+                  <option value="minute">分钟</option>
+                  <option value="hour">小时</option>
+                  <option value="day">天</option>
+                  <option value="week">周</option>
+                  <option value="month">月</option>
+                </select>
+              </Field>
+            </div>
           </Panel>
           <Panel title="实名认证">
             <div className="form-grid">

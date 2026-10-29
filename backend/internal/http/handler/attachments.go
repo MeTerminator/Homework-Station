@@ -15,7 +15,16 @@ import (
 
 func (h *Handler) ListOwnAttachments(c *gin.Context) {
 	files := []model.Attachment{}
-	h.DB.Where("user_id = ?", current(c).ID).Order("id desc").Find(&files)
+	if err := h.DB.Where("user_id = ?", current(c).ID).Order("id desc").Find(&files).Error; err != nil {
+		fail(c, 500, "加载附件失败")
+		return
+	}
+	for i := range files {
+		files[i].Usage = h.Files.AttachmentUsage(files[i].ID)
+		if files[i].Status == "uploading" {
+			files[i].Received = h.Files.Received(files[i])
+		}
+	}
 	c.JSON(200, files)
 }
 
@@ -92,11 +101,19 @@ func (h *Handler) DownloadAttachment(c *gin.Context) {
 	}
 }
 
+func (h *Handler) DeleteOwnAttachment(c *gin.Context) {
+	h.deleteAttachment(c, true)
+}
+
 func (h *Handler) DeleteAttachment(c *gin.Context) {
+	h.deleteAttachment(c, false)
+}
+
+func (h *Handler) deleteAttachment(c *gin.Context, ownOnly bool) {
 	h.Files.MutationMu.Lock()
 	defer h.Files.MutationMu.Unlock()
 	var f model.Attachment
-	if h.DB.First(&f, parseID(c.Param("id"))).Error != nil {
+	if h.DB.First(&f, parseID(c.Param("id"))).Error != nil || (ownOnly && f.UserID != current(c).ID) {
 		fail(c, 404, "附件不存在")
 		return
 	}

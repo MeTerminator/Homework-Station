@@ -51,9 +51,11 @@ export function Shell({ admin = false }: { admin?: boolean }) {
     ? adminNav.find(([p]) => p != "/admin" && loc.pathname.startsWith(p))?.[1] || "总览"
     : loc.pathname === "/profile"
       ? "个人信息"
-      : loc.pathname.startsWith("/assignments/")
-        ? "作业详情"
-        : "我的作业";
+      : loc.pathname === "/attachments"
+        ? "附件管理"
+        : loc.pathname.startsWith("/assignments/")
+          ? "作业详情"
+          : "我的作业";
   return (
     <div className="shell">
       {menu && <div className="overlay" onClick={() => setMenu(false)} />}
@@ -87,6 +89,13 @@ export function Shell({ admin = false }: { admin?: boolean }) {
               >
                 <ClipboardList size={18} />
                 我的作业
+              </NavLink>
+              <NavLink
+                to="/attachments"
+                className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
+              >
+                <Paperclip size={18} />
+                附件管理
               </NavLink>
               <NavLink
                 to="/profile"

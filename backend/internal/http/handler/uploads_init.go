@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"homework-station/internal/model"
 	"homework-station/internal/service"
@@ -61,12 +62,19 @@ func (h *Handler) InitUpload(c *gin.Context) {
 	// Reuse only the current user's proven copy; other users must upload bytes before deduplication.
 	var existing model.Attachment
 	if h.DB.Where("user_id = ? AND sha256 = ? AND size = ? AND name = ?", u.ID, v.SHA256, v.Size, v.Name).Order("id desc").First(&existing).Error == nil {
+		if existing.Status == "uploading" {
+			if err := h.DB.Model(&existing).Update("upload_activity_at", time.Now()).Error; err != nil {
+				fail(c, 500, "更新上传时间失败")
+				return
+			}
+		}
 		existing.Received = h.Files.Received(existing)
 		c.JSON(200, existing)
 		return
 	}
 	total := int((v.Size + service.ChunkBytes - 1) / service.ChunkBytes)
-	f := model.Attachment{UserID: u.ID, Name: v.Name, Size: v.Size, SHA256: v.SHA256, Status: "uploading", ChunkSize: service.ChunkBytes, TotalChunks: total}
+	now := time.Now()
+	f := model.Attachment{UploadActivityAt: &now, UserID: u.ID, Name: v.Name, Size: v.Size, SHA256: v.SHA256, Status: "uploading", ChunkSize: service.ChunkBytes, TotalChunks: total}
 	if h.DB.Create(&f).Error != nil {
 		fail(c, 500, "创建上传失败")
 		return
