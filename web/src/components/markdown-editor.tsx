@@ -52,6 +52,9 @@ export function MarkdownEditor({
   return (
     <div className="markdown-editor" data-color-mode={dark ? "dark" : "light"}>
       <MDEditor
+        // The built-in overflow handler persists a dialog's computed scroll lock
+        // as an inline body style. Let CSS own the fullscreen lock instead.
+        overflow={false}
         value={value}
         onChange={(next) => onChange(next ?? "")}
         commands={editorCommands}

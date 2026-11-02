@@ -44,3 +44,7 @@ jobs:
           MYSQL_TEST_DSN: "root:ci-test-only@tcp(127.0.0.1:3306)/homework_ci?charset=utf8mb4&parseTime=True&loc=UTC"
       - run: go vet ./...
         working-directory: backend
+      - run: npx playwright install --with-deps chromium
+        working-directory: web
+      - run: npm run test:browser
+        working-directory: web

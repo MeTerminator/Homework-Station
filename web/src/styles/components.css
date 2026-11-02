@@ -372,6 +372,11 @@
   text-overflow: ellipsis;
 }
 
+/* Release the fullscreen scroll lock automatically on exit or unmount. */
+body:has(.markdown-editor .w-md-editor-fullscreen) {
+  overflow: hidden;
+}
+
 .markdown-editor {
   min-width: 0;
   --color-canvas-default: var(--card);
