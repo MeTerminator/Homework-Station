@@ -32,10 +32,12 @@ class ReplyTests(unittest.IsolatedAsyncioTestCase):
         self.event.get_plaintext = self.event.message.extract_plain_text
 
     async def test_forward_text_and_credentials(self):
-        with patch.object(module, "post_reply", return_value=(201, {"id": 7})) as post:
+        with patch.object(
+            module, "post_reply", return_value=(201, {"id": 7, "username": "学生甲"})
+        ) as post:
             self.assertEqual(
                 await module.forward_reply(self.config, self.bot, self.event),
-                "回复已发送到平台。",
+                "回复成功 (学生甲)",
             )
         post.assert_called_once_with(
             "https://homework.example.com",

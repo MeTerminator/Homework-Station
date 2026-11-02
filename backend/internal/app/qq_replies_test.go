@@ -70,9 +70,14 @@ func TestQQReplyRoundTrip(t *testing.T) {
 		if want != 201 {
 			return 0
 		}
-		return decode[struct {
-			ID uint `json:"id"`
-		}](t, res).ID
+		result := decode[struct {
+			ID       uint   `json:"id"`
+			Username string `json:"username"`
+		}](t, res)
+		if result.Username != owner.Username {
+			t.Fatalf("reply username = %q want %q", result.Username, owner.Username)
+		}
+		return result.ID
 	}
 	request("", 401)
 	request("Bearer wrong", 401)

@@ -67,6 +67,7 @@ func (svc *SubmissionService) createReview(u model.User, id uint, v SubmissionIn
 		var existing model.ReviewMessage
 		err := svc.db.Where("qq_reply_key = ?", *replyKey).First(&existing).Error
 		if err == nil {
+			existing.Username, existing.AvatarID = u.Username, u.AvatarID
 			return existing, nil
 		}
 		if err != gorm.ErrRecordNotFound {

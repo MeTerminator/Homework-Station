@@ -7,7 +7,7 @@ from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from nonebot import on_message
-from nonebot.adapters.onebot.v11 import Bot, PrivateMessageEvent
+from nonebot.adapters.onebot.v11 import Bot, MessageSegment, PrivateMessageEvent
 from nonebot.adapters.onebot.v11.permission import PRIVATE
 from nonebot.log import logger
 
@@ -81,7 +81,7 @@ async def forward_reply(config, bot: Bot, event: PrivateMessageEvent) -> str:
         logger.exception("QQ 评论回复请求失败")
         return "暂时无法确认回复是否成功，请到平台查看后再重试。"
     if code == 201:
-        return "回复已发送到平台。"
+        return f"回复成功 ({body.get('username', '未知用户')})"
     if code == 401:
         return "回复失败：Bot 与平台的通知 Secret 不一致，请联系管理员。"
     if code in (400, 403, 404, 409):
@@ -111,4 +111,4 @@ def setup_replies(config) -> None:
 
     @matcher.handle()
     async def handle(bot: Bot, event: PrivateMessageEvent) -> None:
-        await matcher.finish(await forward_reply(config, bot, event))
+        await matcher.finish(MessageSegment.text(await forward_reply(config, bot, event)))

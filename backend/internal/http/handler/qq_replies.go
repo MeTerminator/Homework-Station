@@ -26,5 +26,5 @@ func (h *Handler) CreateQQReply(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	c.JSON(201, gin.H{"id": message.ID})
+	c.JSON(201, gin.H{"id": message.ID, "username": message.Username})
 }
