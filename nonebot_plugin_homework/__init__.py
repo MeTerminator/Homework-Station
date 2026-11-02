@@ -3,6 +3,7 @@
 from nonebot import get_driver, get_plugin_config, on_command
 from nonebot.adapters.onebot.v11 import PrivateMessageEvent
 from nonebot.adapters.onebot.v11.permission import PRIVATE
+from nonebot.compat import field_validator
 from nonebot.plugin import PluginMetadata
 from pydantic import BaseModel, Field, SecretStr
 
@@ -16,6 +17,14 @@ class Config(BaseModel):
     homework_notification_path: str = "/homework/notifications"
     homework_notification_secret: SecretStr = SecretStr("")
     homework_notification_bot_id: str = ""
+
+    @field_validator("homework_notification_bot_id", mode="before")
+    @classmethod
+    def normalize_bot_id(cls, value):
+        # NoneBot JSON-decodes dotenv values, so an unquoted QQ ID becomes an int.
+        if type(value) is int:
+            return str(value)
+        return value
 
 
 __plugin_meta__ = PluginMetadata(
