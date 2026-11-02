@@ -1,5 +1,6 @@
 import { useSession } from "@/app/providers/session-provider";
 import { BindingInstructions } from "@/components/binding-instructions";
+import { Confirm } from "@/components/feedback/confirm";
 import { LoadState } from "@/components/feedback/load-state";
 import { Field } from "@/components/form/field";
 import { PageHeading } from "@/components/page-heading";
@@ -17,6 +18,8 @@ import { useEffect, useState } from "react";
 export function SettingsPage() {
   const q = useData(() => api<Settings>("/admin/settings"));
   const [form, setForm] = useState<Settings>({});
+  const [resendOpen, setResendOpen] = useState(false);
+  const [confirmation, setConfirmation] = useState("");
   const [busy, setBusy] = useState(false);
   const { refreshTitle } = useSession();
   useEffect(() => {
@@ -336,6 +339,50 @@ export function SettingsPage() {
               </Field>
             </div>
           </Panel>
+          <Panel title="QQ 评论通知">
+            <div className="stack">
+              <Field
+                label="NoneBot 通知 API 地址"
+                hint="完整 HTTP(S) 地址，包含插件监听路径；留空暂停队列。保存后生效。"
+              >
+                <Input
+                  type="url"
+                  value={form.qq_notification_url || ""}
+                  placeholder="http://127.0.0.1:8080/homework/notifications"
+                  onChange={(e) => set("qq_notification_url", e.target.value)}
+                />
+              </Field>
+              <Field
+                label="通知 Secret"
+                hint="至少 32 个字符，与插件 HOMEWORK_NOTIFICATION_SECRET 一致。"
+              >
+                <Input
+                  type="password"
+                  autoComplete="off"
+                  minLength={32}
+                  value={form.qq_notification_secret || ""}
+                  onChange={(e) => set("qq_notification_secret", e.target.value)}
+                />
+              </Field>
+              <p className="small muted">
+                每秒检查队列，每条通知随机等待 1–3
+                秒；只有已绑定、开启通知且为机器人好友的用户会收到私聊。历史管理员评论也会自动排队。
+              </p>
+              <div>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={busy}
+                  onClick={() => {
+                    setConfirmation("");
+                    setResendOpen(true);
+                  }}
+                >
+                  高危操作：重新发送所有评论通知
+                </Button>
+              </div>
+            </div>
+          </Panel>
           <div>
             <Button type="submit" disabled={busy || uploading}>
               <Save size={16} />
@@ -344,6 +391,27 @@ export function SettingsPage() {
           </div>
         </form>
       </LoadState>
+      <Confirm
+        open={resendOpen}
+        onClose={() => setResendOpen(false)}
+        title="再次确认：重新发送所有评论通知"
+        description="这会将全部历史管理员评论重新加入队列，已收到过通知的用户可能再次收到大量私聊。请输入“重新发送所有评论通知”，再点击确认。"
+        onConfirm={async () => {
+          if (confirmation !== "重新发送所有评论通知") throw new Error("确认文字不匹配");
+          await api(
+            "/admin/settings/notifications/resend-all",
+            json("POST", { confirmation }),
+          );
+        }}
+      >
+        <Field label="确认文字">
+          <Input
+            value={confirmation}
+            onChange={(e) => setConfirmation(e.target.value)}
+            autoComplete="off"
+          />
+        </Field>
+      </Confirm>
     </>
   );
 }

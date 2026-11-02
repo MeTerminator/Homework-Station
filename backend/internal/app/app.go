@@ -20,15 +20,16 @@ import (
 )
 
 type App struct {
-	Config        config.Config
-	DB            *gorm.DB
-	Router        *gin.Engine
-	Handler       *handler.Handler
-	logFile       *os.File
-	closeOnce     sync.Once
-	cleanupCancel context.CancelFunc
-	cleanupDone   chan struct{}
-	closeError    error
+	Config            config.Config
+	DB                *gorm.DB
+	Router            *gin.Engine
+	Handler           *handler.Handler
+	logFile           *os.File
+	closeOnce         sync.Once
+	cleanupCancel     context.CancelFunc
+	cleanupDone       chan struct{}
+	notificationsDone chan struct{}
+	closeError        error
 }
 
 func New(cfg config.Config) (*App, error) {
@@ -84,6 +85,8 @@ func New(cfg config.Config) (*App, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	application.cleanupCancel = cancel
 	application.cleanupDone = make(chan struct{})
+	application.notificationsDone = make(chan struct{})
+	go func() { defer close(application.notificationsDone); application.Handler.Notifications.Run(ctx, output) }()
 	go func() {
 		defer close(application.cleanupDone)
 		application.Handler.Files.RunUploadCleanup(ctx, application.Handler.Settings, output)
@@ -95,6 +98,9 @@ func (a *App) Close() error {
 		if a.cleanupCancel != nil {
 			a.cleanupCancel()
 			<-a.cleanupDone
+			if a.notificationsDone != nil {
+				<-a.notificationsDone
+			}
 		}
 		sqlDB, err := a.DB.DB()
 		if err == nil {

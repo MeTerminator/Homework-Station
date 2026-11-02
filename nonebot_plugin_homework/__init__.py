@@ -1,6 +1,6 @@
 """NoneBot2 + OneBot v11: private /绑定码 command."""
 
-from nonebot import get_plugin_config, on_command
+from nonebot import get_driver, get_plugin_config, on_command
 from nonebot.adapters.onebot.v11 import PrivateMessageEvent
 from nonebot.adapters.onebot.v11.permission import PRIVATE
 from nonebot.plugin import PluginMetadata
@@ -13,6 +13,9 @@ class Config(BaseModel):
     # You may hardcode the same secret as the admin settings here, but environment
     # configuration keeps it out of source control.
     homework_binding_secret: SecretStr = Field(...)
+    homework_notification_path: str = "/homework/notifications"
+    homework_notification_secret: SecretStr = SecretStr("")
+    homework_notification_bot_id: str = ""
 
 
 __plugin_meta__ = PluginMetadata(
@@ -47,3 +50,10 @@ async def handle_binding(event: PrivateMessageEvent) -> None:
     await binding.finish(
         f"您的绑定码为：\n\n{code}\n\n绑定码 5 分钟内有效，请勿发送给他人"
     )
+
+
+# An empty notification secret leaves the existing binding-only plugin usable.
+if config.homework_notification_secret.get_secret_value():
+    from .notifications import setup_notifications
+
+    setup_notifications(get_driver(), config)

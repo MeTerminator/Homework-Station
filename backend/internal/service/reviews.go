@@ -104,6 +104,12 @@ func (svc *SubmissionService) CreateReview(u model.User, id uint, v SubmissionIn
 		if err := tx.Create(&m).Error; err != nil {
 			return err
 		}
+		if !u.Admin {
+			if err := tx.Model(&m).Update("notification_pending", false).Error; err != nil {
+				return err
+			}
+			m.NotificationPending = false
+		}
 		return tx.Model(&s).Update("review_status", status).Error
 	}); err != nil {
 		return empty, Reject(500, "发送评价失败")

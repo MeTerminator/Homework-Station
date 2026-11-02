@@ -1,1 +1,2 @@
 ruff==0.16.9
+-r nonebot_plugin_homework/requirements.txt

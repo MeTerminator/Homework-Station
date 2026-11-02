@@ -102,6 +102,36 @@ export function SubmissionReview({
                   </span>
                   <time className="muted small">{dateText(m.created_at)}</time>
                 </div>
+                {user?.admin && m.admin && (
+                  <div className="row small" style={{ marginTop: 8 }}>
+                    <span className="muted">
+                      最后通知：
+                      {m.last_notified_at ? dateText(m.last_notified_at) : "尚未发送"}
+                      {m.notification_pending
+                        ? " · 排队中"
+                        : m.notification_status.startsWith("skipped_")
+                          ? " · 已跳过"
+                          : ""}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy}
+                      onClick={() => {
+                        setBusy(true);
+                        void perform(async () => {
+                          await api(
+                            `/admin/reviews/${m.id}/notification/resend`,
+                            json("POST", {}),
+                          );
+                          q.reload();
+                        }, "通知已加入发送队列").finally(() => setBusy(false));
+                      }}
+                    >
+                      重新通知
+                    </Button>
+                  </div>
+                )}
                 <div className="markdown">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
                 </div>

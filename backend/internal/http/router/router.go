@@ -54,6 +54,8 @@ func New(h *handler.Handler, output *log.Logger, cfg config.Config) (*gin.Engine
 	a.GET("/attachments/:id/download", h.DownloadAttachment)
 	ad := a.Group("/admin", middleware.AdminOnly())
 	ad.GET("/overview", h.Overview)
+	ad.POST("/settings/notifications/resend-all", h.ResendAllReviewNotifications)
+	ad.POST("/reviews/:id/notification/resend", h.ResendReviewNotification)
 	ad.GET("/settings", h.GetSettings)
 	ad.PUT("/settings", h.PutSettings)
 	ad.POST("/settings/images", h.UploadBrandingImage)

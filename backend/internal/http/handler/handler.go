@@ -10,6 +10,7 @@ import (
 )
 
 type Handler struct {
+	Notifications   *service.NotificationService
 	Users           *service.UserService
 	Categories      *service.CategoryService
 	Assignments     *service.AssignmentService
@@ -29,6 +30,7 @@ func New(db *gorm.DB, cfg config.Config, secret []byte) *Handler {
 	files := service.NewFileService(db, cfg.DataDir)
 	settings := service.NewSettingsService(db)
 	return &Handler{
+		Notifications:   service.NewNotificationService(db, settings),
 		DB:              db,
 		Config:          cfg,
 		SessionSecret:   secret,

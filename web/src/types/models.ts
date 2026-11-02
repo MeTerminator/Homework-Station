@@ -6,6 +6,7 @@ export interface User {
   student_no: string | null;
   real_name: string;
   qq: string | null;
+  qq_comment_notifications: boolean;
   category_ids: string;
   created_at: string;
 }
@@ -74,6 +75,9 @@ export interface Page<T> {
 export type Settings = Record<string, string>;
 
 export interface ReviewMessage {
+  last_notified_at: string | null;
+  notification_pending: boolean;
+  notification_status: string;
   id: number;
   submission_id: number;
   user_id: number;

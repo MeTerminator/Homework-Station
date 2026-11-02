@@ -1,3 +1,5 @@
+PYTHON ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
+
 .PHONY: install install-dev dev-backend dev-web build test format format-check
 
 install:
@@ -22,7 +24,7 @@ test:
 	cd web && npm test
 	cd web && npm run build
 	cd backend && go test ./...
-	python3 -m unittest discover -s tests -p 'test_*.py'
+	$(PYTHON) -m unittest discover -s tests -p 'test_*.py'
 
 format:
 	python3 scripts/format.py

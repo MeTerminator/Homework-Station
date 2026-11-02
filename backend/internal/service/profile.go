@@ -10,8 +10,9 @@ import (
 )
 
 type ProfileInput struct {
-	Username    string `json:"username"`
-	CategoryIDs []uint `json:"category_ids"`
+	QQCommentNotifications *bool  `json:"qq_comment_notifications"`
+	Username               string `json:"username"`
+	CategoryIDs            []uint `json:"category_ids"`
 }
 type PasswordInput struct {
 	Old      string `json:"old"`
@@ -21,6 +22,9 @@ type PasswordInput struct {
 
 func (svc *UserService) UpdateProfile(u model.User, v ProfileInput) (model.User, error) {
 	changes := map[string]interface{}{}
+	if v.QQCommentNotifications != nil {
+		changes["qq_comment_notifications"] = *v.QQCommentNotifications
+	}
 	if v.Username != "" {
 		if !security.ValidUsername(v.Username) {
 			return model.User{}, Reject(400, "用户名格式不正确")

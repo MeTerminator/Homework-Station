@@ -12,6 +12,8 @@ func DefaultSettings(bindingSecret string) map[string]string {
 		"upload_cleanup_value":            "7",
 		"upload_cleanup_unit":             "day",
 		"avatar_max_size":                 "10485760",
+		"qq_notification_url":             "",
+		"qq_notification_secret":          "",
 		"binding_secret":                  bindingSecret,
 		"qq_binding_instructions":         "私聊机器人发送 `/绑定码`，将收到的绑定码粘贴到下方。绑定码 5 分钟内有效，请勿发送给他人。",
 		"registration_enabled":            "true",

@@ -95,6 +95,19 @@ func (s *SettingsService) Update(m map[string]string) error {
 			if m[k] == "" || utf8.RuneCountInString(m[k]) > 2000 {
 				return Reject(400, "QQ 绑定说明需为 1–2000 个字符")
 			}
+		case "qq_notification_url":
+			v = strings.TrimSpace(v)
+			m[k] = v
+			if v != "" {
+				u, err := url.Parse(v)
+				if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil || u.Fragment != "" || len(v) > 2048 {
+					return Reject(400, "通知地址需为完整 HTTP(S) URL")
+				}
+			}
+		case "qq_notification_secret":
+			if v != "" && (len(v) < 32 || strings.ContainsAny(v, "\r\n")) {
+				return Reject(400, "通知 secret 至少 32 个字符且不能包含换行")
+			}
 		case "binding_secret":
 			if len(v) < 32 {
 				return Reject(400, "绑定码 secret 至少 32 个字符")
