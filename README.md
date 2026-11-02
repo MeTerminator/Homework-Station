@@ -224,7 +224,7 @@ https://identity.example/verify?id={id}&name={name}
    nonebot.load_plugin("nonebot_plugin_homework")
    ```
 
-用户私聊机器人发送 `/绑定码`，收到 JWT 后粘贴到个人信息页绑定。插件只响应私聊，绑定码 5 分钟有效且只能成功使用一次。
+用户需先添加机器人为 QQ 好友，通过好友验证后私聊发送 `/绑定码`，收到 JWT 后粘贴到个人信息页绑定。插件只响应私聊；临时会话不会签发绑定码，而会提示先添加好友。绑定码 5 分钟有效且只能成功使用一次。
 
 JWT 使用 HS256，包含字符串 `qq`、`ttl=300`、秒级 `iat` / `exp`、`aud=homework-qq-bind` 及随机 `jti`。后端校验签名、算法、用途、过期时间和 QQ 格式，同一 QQ 只能绑定一个账号。
 

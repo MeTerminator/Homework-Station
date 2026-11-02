@@ -17,8 +17,8 @@ class Config(BaseModel):
 
 __plugin_meta__ = PluginMetadata(
     name="作业驿站绑定码",
-    description="通过私聊签发 5 分钟有效的 QQ 绑定 JWT",
-    usage="私聊发送 /绑定码",
+    description="通过好友私聊签发 5 分钟有效的 QQ 绑定 JWT",
+    usage="添加机器人为 QQ 好友后，私聊发送 /绑定码",
     type="application",
     homepage="https://github.com/nonebot/nonebot2",
     config=Config,
@@ -37,6 +37,12 @@ binding = on_command("绑定码", permission=PRIVATE, priority=10, block=True)
 
 @binding.handle()
 async def handle_binding(event: PrivateMessageEvent) -> None:
+    if event.sub_type != "friend":
+        await binding.finish(
+            "当前为临时会话，无法获取绑定码。请先添加机器人为 QQ 好友，"
+            "通过好友验证后，再私聊发送 /绑定码。"
+        )
+
     code = create_binding_code(str(event.user_id), secret)
     await binding.finish(
         f"您的绑定码为：\n\n{code}\n\n绑定码 5 分钟内有效，请勿发送给他人"
