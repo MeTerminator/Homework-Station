@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 
@@ -92,8 +93,12 @@ func (h *Handler) DownloadAttachment(c *gin.Context) {
 		fail(c, 404, "文件实体不存在")
 		return
 	}
-	if c.Query("inline") == "true" && strings.HasSuffix(f.Name, ".webp") {
-		c.Header("Content-Type", "image/webp")
+	if mime := previewMIME(b.Path); c.Query("inline") == "true" && mime != "" {
+		c.Header("Content-Type", mime)
+		c.Header("Content-Disposition", "inline")
+		if mime == "application/pdf" {
+			c.Header("X-Frame-Options", "SAMEORIGIN")
+		}
 		c.File(b.Path)
 	} else {
 		c.Header("Content-Type", "application/octet-stream")
@@ -127,4 +132,21 @@ func (h *Handler) deleteAttachment(c *gin.Context, ownOnly bool) {
 		return
 	}
 	c.JSON(200, gin.H{"ok": true})
+}
+
+// Only passive image formats and PDF may be served inline; HTML/SVG remain downloads.
+func previewMIME(path string) string {
+	f, err := os.Open(path)
+	if err != nil {
+		return ""
+	}
+	defer f.Close()
+	buf := make([]byte, 512)
+	n, _ := f.Read(buf)
+	mime := http.DetectContentType(buf[:n])
+	switch mime {
+	case "image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp", "image/x-icon", "application/pdf":
+		return mime
+	}
+	return ""
 }

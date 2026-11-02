@@ -1,3 +1,7 @@
+import { SubmissionAttachments } from "./submission-attachments";
+import { Confirm } from "@/components/feedback/confirm";
+import { Pager } from "@/components/pagination";
+import { AttachmentPreview } from "@/features/attachments/components/attachment-preview";
 import { Empty } from "@/components/feedback/empty";
 import { LoadState } from "@/components/feedback/load-state";
 import { CheckField } from "@/components/form/check-field";
@@ -11,31 +15,34 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useData } from "@/hooks/use-data";
-import { perform } from "@/lib/actions";
 import { api, json } from "@/lib/api/client";
-import { fileURL } from "@/lib/api/urls";
-import { dateText, sizeText } from "@/lib/format";
-import type { Submission } from "@/types/models";
-import { Download, Trash2 } from "lucide-react";
+import { dateText } from "@/lib/format";
+import type { Submission, Page } from "@/types/models";
+import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 export function SubmissionHistory({
   assignmentID,
   admin = true,
 }: {
-  assignmentID: number;
+  assignmentID?: number;
   admin?: boolean;
 }) {
-  const q = useData(
-    () => api<Submission[]>(`/assignments/${assignmentID}/submissions`),
-    [assignmentID],
-  );
+  const recent = assignmentID === undefined;
+  const [page, setPage] = useState(1);
+  const [size, setSize] = useState(20);
+  const q = useData(async () => {
+    if (recent)
+      return api<Page<Submission>>(`/admin/submissions?page=${page}&size=${size}`);
+    const items = await api<Submission[]>(`/assignments/${assignmentID}/submissions`);
+    return { items, total: items.length };
+  }, [assignmentID, page, size]);
   const [selected, setSelected] = useState<Submission | null>(null);
   const [remove, setRemove] = useState<Submission | null>(null);
   const [deleteFiles, setDeleteFiles] = useState(false);
   return (
     <Panel
-      title={admin ? "全部历史提交" : "我的历史提交"}
+      title={recent ? "近期提交" : admin ? "全部历史提交" : "我的历史提交"}
       action={
         <Button variant="ghost" size="sm" onClick={q.reload}>
           刷新
@@ -43,12 +50,13 @@ export function SubmissionHistory({
       }
     >
       <LoadState {...q} retry={q.reload}>
-        {q.data?.length ? (
+        {q.data?.items.length ? (
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>提交 ID</th>
+                  {recent && <th>作业</th>}
                   {admin && <th>用户</th>}
                   <th>提交时间</th>
                   <th>状态</th>
@@ -57,9 +65,19 @@ export function SubmissionHistory({
                 </tr>
               </thead>
               <tbody>
-                {q.data.map((s) => (
+                {q.data.items.map((s) => (
                   <tr key={s.id}>
                     <td>#{s.id}</td>
+                    {recent && (
+                      <td>
+                        <Link
+                          className="link"
+                          to={`/admin/assignments/${s.assignment_id}`}
+                        >
+                          {s.assignment_name || `作业 #${s.assignment_id}`}
+                        </Link>
+                      </td>
+                    )}
                     {admin && (
                       <td>
                         <Link to={`/admin/users/${s.user_id}`} className="link">
@@ -73,7 +91,19 @@ export function SubmissionHistory({
                         {s.withdrawn ? "已撤回" : "已提交"}
                       </span>
                     </td>
-                    <td>{s.attachments?.length || 0} 个</td>
+                    <td>
+                      {recent ? (
+                        <SubmissionAttachments files={s.attachments || []} />
+                      ) : s.attachments?.length ? (
+                        <div className="stack">
+                          {s.attachments.map((f) => (
+                            <AttachmentPreview key={f.id} file={f} />
+                          ))}
+                        </div>
+                      ) : (
+                        "无附件"
+                      )}
+                    </td>
                     <td>
                       <div className="row">
                         <Button size="sm" variant="ghost" onClick={() => setSelected(s)}>
@@ -124,44 +154,40 @@ export function SubmissionHistory({
             {selected?.content || "无文本内容"}
           </div>
           {selected?.attachments.map((f) => (
-            <a className="upload-file link" key={f.id} href={fileURL(f.id)}>
-              <Download size={15} />
-              {f.name}
-              <span>{sizeText(f.size)}</span>
-            </a>
+            <AttachmentPreview key={f.id} file={f} />
           ))}
         </DialogContent>
       </Dialog>
-      <Dialog open={!!remove} onOpenChange={(v) => !v && setRemove(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>删除提交 #{remove?.id}？</DialogTitle>
-            <DialogDescription>
-              此记录将永久删除。共用附件仅在没有其他关联时清理。
-            </DialogDescription>
-          </DialogHeader>
-          <CheckField
-            label="同时删除不再使用的关联附件，释放空间"
-            checked={deleteFiles}
-            onChange={setDeleteFiles}
-          />
-          <Button
-            variant="destructive"
-            onClick={() =>
-              perform(async () => {
-                await api(
-                  `/admin/submissions/${remove?.id}?files=${deleteFiles}`,
-                  json("DELETE"),
-                );
-                setRemove(null);
-                q.reload();
-              }, "提交已删除")
-            }
-          >
-            确认删除
-          </Button>
-        </DialogContent>
-      </Dialog>
+      {recent && (
+        <Pager
+          page={page}
+          size={size}
+          total={q.data?.total || 0}
+          onPage={setPage}
+          onSize={setSize}
+        />
+      )}
+      <Confirm
+        open={!!remove}
+        onClose={() => setRemove(null)}
+        title={`删除提交 #${remove?.id}？`}
+        description="此记录将永久删除。共用附件仅在没有其他关联时清理。"
+        onConfirm={async () => {
+          await api(
+            `/admin/submissions/${remove?.id}?files=${deleteFiles}`,
+            json("DELETE"),
+          );
+          if (selected?.id === remove?.id) setSelected(null);
+          if (recent && q.data?.items.length === 1 && page > 1) setPage(page - 1);
+          else q.reload();
+        }}
+      >
+        <CheckField
+          label="同时删除不再使用的关联附件，释放空间"
+          checked={deleteFiles}
+          onChange={setDeleteFiles}
+        />
+      </Confirm>
     </Panel>
   );
 }

@@ -8,14 +8,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { perform } from "@/lib/actions";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 export function Confirm({
   open,
   onClose,
   title,
   description,
   onConfirm,
+  children,
 }: {
+  children?: ReactNode;
   open: boolean;
   onClose: () => void;
   title: string;
@@ -35,6 +37,7 @@ export function Confirm({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
+        {children && <fieldset disabled={busy}>{children}</fieldset>}
         <DialogFooter>
           <Button variant="outline" disabled={busy} onClick={onClose}>
             取消

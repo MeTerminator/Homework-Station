@@ -53,6 +53,7 @@ export interface Attachment {
 }
 
 export interface Submission {
+  assignment_name?: string;
   id: number;
   assignment_id: number;
   user_id: number;

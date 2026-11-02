@@ -32,6 +32,7 @@ export const adminNav = [
   ["/admin", "总览", LayoutDashboard],
   ["/admin/categories", "作业分类", FolderTree],
   ["/admin/assignments", "作业管理", ClipboardList],
+  ["/admin/submissions", "提交管理", BookOpen],
   ["/admin/users", "用户管理", Users],
   ["/admin/attachments", "附件管理", Paperclip],
   ["/admin/settings", "设置", Settings],

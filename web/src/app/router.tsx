@@ -66,6 +66,11 @@ const AttachmentManager = lazy(() =>
     default: m.AttachmentManager,
   })),
 );
+const SubmissionManager = lazy(() =>
+  import("@/features/admin/submissions/pages/submission-manager-page").then((m) => ({
+    default: m.SubmissionManager,
+  })),
+);
 export function AppRouter() {
   const { dark } = useTheme();
   return (
@@ -86,6 +91,7 @@ export function AppRouter() {
               <Route index element={<Overview />} />
               <Route path="assignments" element={<AssignmentList />} />
               <Route path="assignments/:id" element={<AssignmentEditor />} />
+              <Route path="submissions" element={<SubmissionManager />} />
               <Route path="categories" element={<CategoryManager />} />
               <Route path="users" element={<UserList />} />
               <Route path="users/:id" element={<UserEditor />} />

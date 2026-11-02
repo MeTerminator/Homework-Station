@@ -68,6 +68,7 @@ func New(h *handler.Handler, output *log.Logger, cfg config.Config) (*gin.Engine
 	ad.POST("/users/:id/unbind/:kind", h.Unbind)
 	ad.GET("/attachments", h.ListAllAttachments)
 	ad.DELETE("/attachments/:id", h.DeleteAttachment)
+	ad.GET("/submissions", h.ListAllSubmissions)
 	ad.DELETE("/submissions/:id", h.DeleteSubmission)
 	r.NoRoute(frontendHandler(frontend.Files()))
 	return r, nil

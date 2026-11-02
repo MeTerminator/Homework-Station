@@ -58,3 +58,49 @@ func (h *Handler) DeleteSubmission(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"ok": true})
 }
+
+// ListAllSubmissions returns recent submissions across every assignment for admins.
+func (h *Handler) ListAllSubmissions(c *gin.Context) {
+	page, size := pagination(c)
+	q := h.DB.Model(&model.Submission{})
+	var total int64
+	if err := q.Count(&total).Error; err != nil {
+		fail(c, 500, "加载提交失败")
+		return
+	}
+	items := []model.Submission{}
+	if err := q.Select("submissions.*").
+		Preload("Attachments").Order("submissions.created_at DESC, submissions.id DESC").
+		Offset((page - 1) * size).Limit(size).Find(&items).Error; err != nil {
+		fail(c, 500, "加载提交失败")
+		return
+	}
+	userIDs, assignmentIDs := []uint{}, []uint{}
+	for _, s := range items {
+		userIDs = append(userIDs, s.UserID)
+		assignmentIDs = append(assignmentIDs, s.AssignmentID)
+	}
+	users, assignments := []model.User{}, []model.Assignment{}
+	if len(items) > 0 {
+		if err := h.DB.Select("id", "username").Where("id IN ?", userIDs).Find(&users).Error; err != nil {
+			fail(c, 500, "加载用户失败")
+			return
+		}
+		if err := h.DB.Select("id", "name").Where("id IN ?", assignmentIDs).Find(&assignments).Error; err != nil {
+			fail(c, 500, "加载作业失败")
+			return
+		}
+	}
+	names, titles := map[uint]string{}, map[uint]string{}
+	for _, u := range users {
+		names[u.ID] = u.Username
+	}
+	for _, a := range assignments {
+		titles[a.ID] = a.Name
+	}
+	for i := range items {
+		items[i].Username = names[items[i].UserID]
+		items[i].AssignmentName = titles[items[i].AssignmentID]
+	}
+	c.JSON(200, gin.H{"items": items, "total": total})
+}

@@ -1,3 +1,4 @@
+import { Confirm } from "@/components/feedback/confirm";
 import { Button } from "@/components/ui/button";
 import { upload } from "@/features/attachments/api/upload";
 import { fileURL } from "@/lib/api/urls";
@@ -21,6 +22,7 @@ export function UploadBox({
   extensions?: string;
   onBusy?: (b: boolean) => void;
 }) {
+  const [remove, setRemove] = useState<Attachment | null>(null);
   const [progress, setProgress] = useState(0);
   const [label, setLabel] = useState("");
   const [busy, setBusy] = useState(false);
@@ -130,6 +132,15 @@ export function UploadBox({
         )}
         {error && <p style={{ marginTop: 10, color: "#dc6472" }}>{error}</p>}
       </div>
+      <Confirm
+        open={!!remove}
+        onClose={() => setRemove(null)}
+        title={`移除「${remove?.name}」？`}
+        description="将从本次编辑的附件列表中移除，文件仍保留在附件管理中。"
+        onConfirm={async () =>
+          onChange(liveFiles.current.filter((f) => f.id !== remove?.id))
+        }
+      />
       {files.map((f) => (
         <div className="upload-file" key={f.id}>
           <FileText size={17} className="muted" />
@@ -145,7 +156,7 @@ export function UploadBox({
             type="button"
             variant="ghost"
             size="icon"
-            onClick={() => onChange(files.filter((x) => x.id !== f.id))}
+            onClick={() => setRemove(f)}
             aria-label={`移除 ${f.name}`}
           >
             <X size={15} />
