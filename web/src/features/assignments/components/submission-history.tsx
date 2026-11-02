@@ -92,17 +92,7 @@ export function SubmissionHistory({
                       </span>
                     </td>
                     <td>
-                      {recent ? (
-                        <SubmissionAttachments files={s.attachments || []} />
-                      ) : s.attachments?.length ? (
-                        <div className="stack">
-                          {s.attachments.map((f) => (
-                            <AttachmentPreview key={f.id} file={f} />
-                          ))}
-                        </div>
-                      ) : (
-                        "无附件"
-                      )}
+                      <SubmissionAttachments files={s.attachments || []} />
                     </td>
                     <td>
                       <div className="row">
