@@ -11,6 +11,53 @@ from nonebot.drivers import URL, ASGIMixin, HTTPServerSetup, Request, Response
 from nonebot.log import logger
 
 
+async def deliver_notification(bots: list[Bot], qq: str, message: str) -> str:
+    failed = False
+    # Prefer an existing friend connection across all eligible bot accounts.
+    for bot in bots:
+        try:
+            friends = await bot.get_friend_list()
+            if any(str(friend["user_id"]) == qq for friend in friends):
+                await bot.send_private_msg(
+                    user_id=int(qq), message=message, auto_escape=True
+                )
+                return "sent"
+        except Exception:
+            failed = True
+            logger.exception("评论好友私聊通知失败")
+
+    # A group is only a source for a temporary PRIVATE session. Never post the
+    # homework comment to the group itself. Stop after the first successful send.
+    for bot in bots:
+        try:
+            groups = await bot.get_group_list()
+        except Exception:
+            failed = True
+            logger.exception("评论通知获取共同群列表失败")
+            continue
+        for group in groups:
+            try:
+                group_id = int(group["group_id"])
+                members = await bot.get_group_member_list(group_id=group_id)
+                if not any(str(member["user_id"]) == qq for member in members):
+                    continue
+                # group_id is an implementation extension for temporary sessions;
+                # call_api forwards it without relying on the adapter's type stub.
+                await bot.call_api(
+                    "send_private_msg",
+                    user_id=int(qq),
+                    group_id=group_id,
+                    message=message,
+                    auto_escape=True,
+                )
+                return "sent"
+            except Exception:
+                failed = True
+                logger.exception("评论共同群临时私聊失败，继续尝试其他群")
+    # Unknown membership or rejected temporary sessions must remain retryable.
+    return "delivery_failed" if failed else "not_friend"
+
+
 def setup_notifications(driver, config) -> None:
     secret = config.homework_notification_secret.get_secret_value()
     if len(secret.encode()) < 32 or "\r" in secret or "\n" in secret:
@@ -61,18 +108,8 @@ def setup_notifications(driver, config) -> None:
             ]
             if not bots:
                 return response(503, "bot_offline")
-            try:
-                for bot in bots:
-                    friends = await bot.get_friend_list()
-                    if any(str(friend["user_id"]) == qq for friend in friends):
-                        await bot.send_private_msg(
-                            user_id=int(qq), message=message, auto_escape=True
-                        )
-                        return response(200, "sent")
-                return response(200, "not_friend")
-            except Exception:
-                logger.exception("评论私聊通知失败")
-                return response(503, "delivery_failed")
+            status = await deliver_notification(bots, qq, message)
+            return response(503 if status == "delivery_failed" else 200, status)
 
     driver.setup_http_server(
         HTTPServerSetup(

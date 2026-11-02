@@ -40,7 +40,7 @@ export function QQBindingCard() {
             );
           }}
         />
-        接收管理员评论的 QQ 私聊通知（需绑定 QQ 并添加机器人为好友）
+        接收管理员评论的 QQ 私聊通知（需绑定 QQ；非好友尝试共同群临时私聊）
       </label>
       {user.qq ? (
         <>

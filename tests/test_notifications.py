@@ -51,6 +51,7 @@ class NotificationTests(unittest.IsolatedAsyncioTestCase):
             self_id = "10000"
             get_friend_list = AsyncMock(return_value=[{"user_id": 123456789}])
             send_private_msg = AsyncMock()
+            get_group_list = AsyncMock(return_value=[])
 
         bot = FakeBot()
         with (
@@ -61,6 +62,7 @@ class NotificationTests(unittest.IsolatedAsyncioTestCase):
                 {"qq": "123456789", "message": "[CQ:at,qq=all]"}
             )
             self.assertEqual(json.loads(response.content)["status"], "sent")
+            bot.get_group_list.assert_not_awaited()
             bot.send_private_msg.assert_awaited_once_with(
                 user_id=123456789, message="[CQ:at,qq=all]", auto_escape=True
             )
@@ -91,3 +93,101 @@ class NotificationTests(unittest.IsolatedAsyncioTestCase):
         self.config.homework_notification_secret = SecretStr("short")
         with self.assertRaises(ValueError):
             module.setup_notifications(self.driver, self.config)
+
+    async def test_common_group_temporary_private_delivery(self):
+        class GroupBot:
+            self_id = "10000"
+            get_friend_list = AsyncMock(return_value=[])
+            get_group_list = AsyncMock(
+                return_value=[{"group_id": 10001}, {"group_id": "10002"}]
+            )
+            get_group_member_list = AsyncMock(
+                side_effect=[[{"user_id": 99999}], [{"user_id": "123456789"}]]
+            )
+            call_api = AsyncMock()
+            send_group_msg = AsyncMock()
+
+        bot = GroupBot()
+        with (
+            patch.object(module, "Bot", GroupBot),
+            patch.object(module, "get_bots", return_value={"10000": bot}),
+        ):
+            result = await self.request({"qq": "123456789", "message": "[CQ:at,qq=all]"})
+        self.assertEqual(json.loads(result.content)["status"], "sent")
+        bot.call_api.assert_awaited_once_with(
+            "send_private_msg",
+            user_id=123456789,
+            group_id=10002,
+            message="[CQ:at,qq=all]",
+            auto_escape=True,
+        )
+        bot.send_group_msg.assert_not_awaited()
+
+    async def test_temporary_failure_tries_next_group_and_stops_on_success(self):
+        bot = SimpleNamespace(
+            get_friend_list=AsyncMock(return_value=[]),
+            get_group_list=AsyncMock(return_value=[{"group_id": n} for n in (1, 2, 3)]),
+            get_group_member_list=AsyncMock(return_value=[{"user_id": 123456789}]),
+            call_api=AsyncMock(
+                side_effect=[RuntimeError("temporary session denied"), {}]
+            ),
+        )
+        with patch.object(module, "logger"):
+            self.assertEqual(
+                await module.deliver_notification([bot], "123456789", "text"), "sent"
+            )
+        self.assertEqual(bot.call_api.await_count, 2)
+        self.assertEqual(bot.get_group_member_list.await_count, 2)
+        self.assertEqual(bot.call_api.await_args.kwargs["group_id"], 2)
+
+    async def test_friend_on_second_bot_precedes_common_group(self):
+        first = SimpleNamespace(
+            get_friend_list=AsyncMock(return_value=[]),
+            get_group_list=AsyncMock(),
+        )
+        second = SimpleNamespace(
+            get_friend_list=AsyncMock(return_value=[{"user_id": 123456789}]),
+            send_private_msg=AsyncMock(),
+            get_group_list=AsyncMock(),
+        )
+        self.assertEqual(
+            await module.deliver_notification([first, second], "123456789", "text"),
+            "sent",
+        )
+        first.get_group_list.assert_not_awaited()
+        second.get_group_list.assert_not_awaited()
+
+    async def test_group_lookup_and_send_failures_are_retryable(self):
+        for stage in ("groups", "members", "send"):
+            with self.subTest(stage=stage):
+                bot = SimpleNamespace(
+                    get_friend_list=AsyncMock(return_value=[]),
+                    get_group_list=AsyncMock(return_value=[{"group_id": 1}]),
+                    get_group_member_list=AsyncMock(
+                        return_value=[{"user_id": 123456789}]
+                    ),
+                    call_api=AsyncMock(),
+                )
+                operation = {
+                    "groups": bot.get_group_list,
+                    "members": bot.get_group_member_list,
+                    "send": bot.call_api,
+                }[stage]
+                operation.side_effect = RuntimeError("API unavailable")
+                with patch.object(module, "logger"):
+                    self.assertEqual(
+                        await module.deliver_notification([bot], "123456789", "text"),
+                        "delivery_failed",
+                    )
+
+    async def test_no_common_group_skips_without_sending(self):
+        bot = SimpleNamespace(
+            get_friend_list=AsyncMock(return_value=[]),
+            get_group_list=AsyncMock(return_value=[{"group_id": 1}]),
+            get_group_member_list=AsyncMock(return_value=[{"user_id": 99999}]),
+            call_api=AsyncMock(),
+        )
+        self.assertEqual(
+            await module.deliver_notification([bot], "123456789", "text"), "not_friend"
+        )
+        bot.call_api.assert_not_awaited()
