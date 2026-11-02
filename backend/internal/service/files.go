@@ -55,6 +55,11 @@ func (s *FileService) AttachmentUsage(id uint) []string {
 	for _, s := range subs {
 		v = append(v, fmt.Sprintf("作业 #%d · 提交 #%d", s.AssignmentID, s.ID))
 	}
+	reviews := []model.ReviewMessage{}
+	s.db.Joins("JOIN review_attachments ON review_attachments.review_message_id = review_messages.id").Where("review_attachments.attachment_id = ?", id).Find(&reviews)
+	for _, m := range reviews {
+		v = append(v, fmt.Sprintf("提交 #%d 的评价 #%d", m.SubmissionID, m.ID))
+	}
 	links := []model.AssignmentAttachment{}
 	s.db.Where("attachment_id = ?", id).Find(&links)
 	for _, l := range links {
@@ -71,6 +76,10 @@ func (s *FileService) CanDownload(u model.User, f model.Attachment) bool {
 	if n > 0 {
 		return true
 	}
+	s.db.Model(&model.ReviewMessage{}).Joins("JOIN review_attachments ON review_attachments.review_message_id = review_messages.id").Joins("JOIN submissions ON submissions.id = review_messages.submission_id").Joins("JOIN assignments ON assignments.id = submissions.assignment_id").Where("review_attachments.attachment_id = ? AND submissions.user_id = ? AND assignments.status <> ?", f.ID, u.ID, "hidden").Count(&n)
+	if n > 0 {
+		return true
+	}
 	s.db.Model(&model.User{}).Where("avatar_id = ?", f.ID).Count(&n)
 	return n > 0
 }
@@ -83,6 +92,9 @@ func (s *FileService) RemoveAttachment(f model.Attachment) error {
 			return e
 		}
 		if e := tx.Where("attachment_id = ?", f.ID).Delete(&model.AssignmentAttachment{}).Error; e != nil {
+			return e
+		}
+		if e := tx.Where("attachment_id = ?", f.ID).Delete(&model.ReviewAttachment{}).Error; e != nil {
 			return e
 		}
 		return tx.Delete(&f).Error

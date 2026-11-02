@@ -1,3 +1,5 @@
+import { ReviewStatus } from "./assignment-status";
+import { SubmissionReview } from "./submission-review";
 import { SubmissionAttachments } from "./submission-attachments";
 import { Confirm } from "@/components/feedback/confirm";
 import { Pager } from "@/components/pagination";
@@ -37,6 +39,7 @@ export function SubmissionHistory({
     const items = await api<Submission[]>(`/assignments/${assignmentID}/submissions`);
     return { items, total: items.length };
   }, [assignmentID, page, size]);
+  const [review, setReview] = useState<Submission | null>(null);
   const [selected, setSelected] = useState<Submission | null>(null);
   const [remove, setRemove] = useState<Submission | null>(null);
   const [deleteFiles, setDeleteFiles] = useState(false);
@@ -87,9 +90,7 @@ export function SubmissionHistory({
                     )}
                     <td className="muted">{dateText(s.created_at)}</td>
                     <td>
-                      <span className={`badge ${s.withdrawn ? "gray" : "green"}`}>
-                        {s.withdrawn ? "已撤回" : "已提交"}
-                      </span>
+                      <ReviewStatus status={s.review_status} withdrawn={s.withdrawn} />
                     </td>
                     <td>
                       <SubmissionAttachments files={s.attachments || []} />
@@ -98,6 +99,9 @@ export function SubmissionHistory({
                       <div className="row">
                         <Button size="sm" variant="ghost" onClick={() => setSelected(s)}>
                           查看
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setReview(s)}>
+                          {admin ? "评价" : "评价交流"}
                         </Button>
                         {admin && (
                           <Button
@@ -123,6 +127,16 @@ export function SubmissionHistory({
           <Empty title="还没有提交记录" description="提交后的内容和附件会保存在这里。" />
         )}
       </LoadState>
+      {review && (
+        <SubmissionReview
+          key={review.id}
+          submission={review}
+          onClose={() => setReview(null)}
+          onChange={() => {
+            q.reload();
+          }}
+        />
+      )}
       <Dialog open={!!selected} onOpenChange={(v) => !v && setSelected(null)}>
         <DialogContent
           className="sm:max-w-2xl"
@@ -161,7 +175,7 @@ export function SubmissionHistory({
         open={!!remove}
         onClose={() => setRemove(null)}
         title={`删除提交 #${remove?.id}？`}
-        description="此记录将永久删除。共用附件仅在没有其他关联时清理。"
+        description="此记录及全部评价对话将永久删除。共用附件仅在没有其他关联时清理。"
         onConfirm={async () => {
           await api(
             `/admin/submissions/${remove?.id}?files=${deleteFiles}`,

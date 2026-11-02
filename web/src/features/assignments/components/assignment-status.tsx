@@ -7,3 +7,25 @@ export function Status({ status }: { status: string }) {
     </span>
   );
 }
+
+export function ReviewStatus({
+  status,
+  withdrawn = false,
+}: {
+  status?: string;
+  withdrawn?: boolean;
+}) {
+  return (
+    <span
+      className={`badge ${withdrawn ? "gray" : status === "pending" ? "red" : "green"}`}
+    >
+      {withdrawn
+        ? "已撤回"
+        : status === "reviewed"
+          ? "已评价"
+          : status === "pending"
+            ? "待回复"
+            : "已提交"}
+    </span>
+  );
+}

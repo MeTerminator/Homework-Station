@@ -1,4 +1,7 @@
-import { Status } from "@/features/assignments/components/assignment-status";
+import {
+  Status,
+  ReviewStatus,
+} from "@/features/assignments/components/assignment-status";
 import type { AssignmentCategoryGroup } from "@/features/categories/lib/category-tree";
 import { dateText } from "@/lib/format";
 import { ArrowRight, BookOpen, Clock } from "lucide-react";
@@ -34,7 +37,7 @@ export function AssignmentCategorySection({ group }: { group: AssignmentCategory
                   <BookOpen size={18} />
                 </span>
                 {a.submitted ? (
-                  <span className="badge green">已提交</span>
+                  <ReviewStatus status={a.review_status} />
                 ) : (
                   <Status status={a.status} />
                 )}

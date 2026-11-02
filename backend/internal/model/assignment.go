@@ -3,6 +3,7 @@ package model
 import "time"
 
 type Assignment struct {
+	ReviewStatus     string     `json:"review_status" gorm:"-"`
 	ID               uint       `json:"id" gorm:"primaryKey"`
 	Name             string     `json:"name" gorm:"size:200"`
 	CategoryID       *uint      `json:"category_id"`

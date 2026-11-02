@@ -43,6 +43,8 @@ func New(h *handler.Handler, output *log.Logger, cfg config.Config) (*gin.Engine
 	a.GET("/assignments/:id/submissions", h.ListSubmissions)
 	a.POST("/assignments/:id/submissions", h.CreateSubmission)
 	a.POST("/submissions/:id/withdraw", h.WithdrawSubmission)
+	a.GET("/submissions/:id/reviews", h.ListReviews)
+	a.POST("/submissions/:id/reviews", h.CreateReview)
 	a.POST("/uploads", h.InitUpload)
 	a.GET("/uploads/:id", h.UploadStatus)
 	a.PUT("/uploads/:id/chunks/:index", h.PutChunk)

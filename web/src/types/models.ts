@@ -18,6 +18,7 @@ export interface Category {
 }
 
 export interface Assignment {
+  review_status: string;
   id: number;
   name: string;
   category_id: number | null;
@@ -53,6 +54,7 @@ export interface Attachment {
 }
 
 export interface Submission {
+  review_status: string;
   assignment_name?: string;
   id: number;
   assignment_id: number;
@@ -70,3 +72,15 @@ export interface Page<T> {
 }
 
 export type Settings = Record<string, string>;
+
+export interface ReviewMessage {
+  id: number;
+  submission_id: number;
+  user_id: number;
+  username: string;
+  avatar_id: number | null;
+  admin: boolean;
+  content: string;
+  created_at: string;
+  attachments: Attachment[];
+}

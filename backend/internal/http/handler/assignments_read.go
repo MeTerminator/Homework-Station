@@ -68,6 +68,10 @@ func (h *Handler) DecorateAssignment(a *model.Assignment, uid uint) {
 	var n int64
 	h.DB.Model(&model.Submission{}).Where("assignment_id = ? AND user_id = ? AND withdrawn = ?", a.ID, uid, false).Count(&n)
 	a.Submitted = n > 0
+	var latest model.Submission
+	if a.Submitted && h.DB.Where("assignment_id = ? AND user_id = ? AND withdrawn = ?", a.ID, uid, false).Order("id desc").First(&latest).Error == nil {
+		a.ReviewStatus = latest.ReviewStatus
+	}
 	if a.Status == "published" && a.Deadline != nil && a.Deadline.Before(time.Now()) {
 		a.Status = "closed"
 	}

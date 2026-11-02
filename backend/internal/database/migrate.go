@@ -17,7 +17,7 @@ func Initialize(db *gorm.DB, bindingSecret string, output *log.Logger) error {
 		&model.User{}, &model.Category{}, &model.Assignment{},
 		&model.Attachment{}, &model.Blob{}, &model.Submission{},
 		&model.SubmissionAttachment{}, &model.AssignmentAttachment{},
-		&model.Setting{}, &model.UsedCode{},
+		&model.Setting{}, &model.UsedCode{}, &model.ReviewMessage{}, &model.ReviewAttachment{},
 	); e != nil {
 		return e
 	}

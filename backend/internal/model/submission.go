@@ -3,6 +3,7 @@ package model
 import "time"
 
 type Submission struct {
+	ReviewStatus   string       `json:"review_status" gorm:"size:20;not null;default:submitted"`
 	ID             uint         `json:"id" gorm:"primaryKey"`
 	AssignmentID   uint         `json:"assignment_id" gorm:"index"`
 	UserID         uint         `json:"user_id" gorm:"index"`

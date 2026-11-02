@@ -98,7 +98,21 @@ func (svc *SubmissionService) Delete(id uint, deleteFiles bool) error {
 	if svc.db.Preload("Attachments").First(&s, id).Error != nil {
 		return Reject(404, "提交记录不存在")
 	}
+	reviews := []model.ReviewMessage{}
+	if err := svc.db.Preload("Attachments").Where("submission_id = ?", id).Find(&reviews).Error; err != nil {
+		return Reject(500, "加载评价失败")
+	}
+	for _, m := range reviews {
+		s.Attachments = append(s.Attachments, m.Attachments...)
+	}
 	e := svc.db.Transaction(func(tx *gorm.DB) error {
+		ids := tx.Model(&model.ReviewMessage{}).Select("id").Where("submission_id = ?", id)
+		if err := tx.Where("review_message_id IN (?)", ids).Delete(&model.ReviewAttachment{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("submission_id = ?", id).Delete(&model.ReviewMessage{}).Error; err != nil {
+			return err
+		}
 		if e := tx.Where("submission_id = ?", id).Delete(&model.SubmissionAttachment{}).Error; e != nil {
 			return e
 		}

@@ -242,3 +242,13 @@
 .assignment-detail-sidebar .panel-head {
   flex-wrap: wrap;
 }
+
+.review-message {
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+.review-message .markdown {
+  margin-top: 14px;
+}

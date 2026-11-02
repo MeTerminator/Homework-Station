@@ -18,4 +18,5 @@ export const blankAssignment: Assignment = {
   created_at: "",
   submitters: 0,
   submitted: false,
+  review_status: "",
 };
