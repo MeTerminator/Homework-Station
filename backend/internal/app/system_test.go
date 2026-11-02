@@ -108,7 +108,7 @@ func TestSystem(t *testing.T) {
 	other.request("POST", fmt.Sprintf("/api/submissions/%d/withdraw", sub.ID), nil, 404)
 	student.request("POST", fmt.Sprintf("/api/submissions/%d/withdraw", sub.ID), nil, 200)
 	sub2 := decode[model.Submission](t, student.request("POST", path+"/submissions", gin.H{"content": "重交", "attachment_ids": []uint{f.ID}}, 201))
-	all := decode[[]model.Submission](t, admin.request("GET", path+"/submissions", nil, 200))
+	all := decode[[]model.Submission](t, admin.request("GET", fmt.Sprintf("/api/admin/assignments/%d/submissions", assignment.ID), nil, 200))
 	if len(all) != 2 {
 		t.Fatal("history lost")
 	}

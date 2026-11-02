@@ -61,6 +61,7 @@ func New(h *handler.Handler, output *log.Logger, cfg config.Config) (*gin.Engine
 	ad.PUT("/categories/:id", h.SaveCategory)
 	ad.DELETE("/categories/:id", h.DeleteCategory)
 	ad.GET("/assignments", h.ListAssignments)
+	ad.GET("/assignments/:id/submissions", h.ListAdminAssignmentSubmissions)
 	ad.POST("/assignments", h.SaveAssignment)
 	ad.PUT("/assignments/:id", h.SaveAssignment)
 	ad.DELETE("/assignments/:id", h.DeleteAssignment)

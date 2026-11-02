@@ -8,16 +8,24 @@ import (
 )
 
 func (h *Handler) ListSubmissions(c *gin.Context) {
+	h.listAssignmentSubmissions(c, false)
+}
+
+func (h *Handler) ListAdminAssignmentSubmissions(c *gin.Context) {
+	h.listAssignmentSubmissions(c, true)
+}
+
+func (h *Handler) listAssignmentSubmissions(c *gin.Context, admin bool) {
 	a, ok := h.VisibleAssignment(c)
 	if !ok {
 		return
 	}
 	u := current(c)
 	q := h.DB.Preload("Attachments").Where("assignment_id = ?", a.ID)
-	if !u.Admin {
+	if !admin {
 		q = q.Where("user_id = ?", u.ID)
 	}
-	if id := parseID(c.Query("user_id")); u.Admin && id > 0 {
+	if id := parseID(c.Query("user_id")); admin && id > 0 {
 		q = q.Where("user_id = ?", id)
 	}
 	v := []model.Submission{}

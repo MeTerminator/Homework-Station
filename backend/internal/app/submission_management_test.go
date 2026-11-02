@@ -120,3 +120,75 @@ func TestSubmissionManagementAndPreviews(t *testing.T) {
 		t.Fatal("deleted submission remains")
 	}
 }
+
+func TestAssignmentSubmissionHistoryScope(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	t.Setenv("DATA_DIR", t.TempDir())
+	t.Setenv("DB_DRIVER", "sqlite")
+	t.Setenv("DB_DSN", "")
+	t.Setenv("JWT_SECRET", "test-session-secret-32-characters-long")
+	app, err := New(config.Load())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer app.Close()
+	admin := &testClient{t: t, r: app.Router}
+	owner := &testClient{t: t, r: app.Router}
+	other := &testClient{t: t, r: app.Router}
+	guest := &testClient{t: t, r: app.Router}
+	adminUser := decode[model.User](t, admin.request("POST", "/api/login", gin.H{"username": "admin", "password": "123456"}, 200))
+	ownerUser := owner.register("history-owner")
+	other.register("history-other")
+	assignment := decode[model.Assignment](t, admin.request("POST", "/api/admin/assignments", model.Assignment{Name: "History", Status: "published", Multiple: true, Withdraw: true, MaxSize: 1024}, 200))
+	path := fmt.Sprintf("/api/assignments/%d/submissions", assignment.ID)
+	adminPath := fmt.Sprintf("/api/admin/assignments/%d/submissions", assignment.ID)
+	ownerSubmission := decode[model.Submission](t, owner.request("POST", path, gin.H{"content": "owner answer"}, 201))
+	owner.request("POST", fmt.Sprintf("/api/submissions/%d/withdraw", ownerSubmission.ID), nil, 200)
+	owner.request("POST", path, gin.H{"content": "owner resubmission"}, 201)
+
+	// Admins without their own submissions also receive an empty personal history.
+	empty := decode[[]model.Submission](t, admin.request("GET", path, nil, 200))
+	if empty == nil || len(empty) != 0 {
+		t.Fatalf("expected empty admin personal history, got %+v", empty)
+	}
+	adminSubmission := decode[model.Submission](t, admin.request("POST", path, gin.H{"content": "admin answer"}, 201))
+	for _, tc := range []struct {
+		name   string
+		client *testClient
+		userID uint
+		count  int
+	}{
+		{"admin", admin, adminUser.ID, 1},
+		{"owner", owner, ownerUser.ID, 2},
+		{"other", other, 0, 0},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, query := range []string{"", fmt.Sprintf("?user_id=%d", ownerUser.ID), fmt.Sprintf("?user_id=%d", adminUser.ID)} {
+				items := decode[[]model.Submission](t, tc.client.request("GET", path+query, nil, 200))
+				if len(items) != tc.count {
+					t.Fatalf("expected %d personal submissions, got %+v", tc.count, items)
+				}
+				for _, s := range items {
+					if s.UserID != tc.userID {
+						t.Fatalf("personal history contains another user's submission: %+v", s)
+					}
+				}
+			}
+		})
+	}
+	guest.request("GET", adminPath, nil, 401)
+	owner.request("GET", adminPath, nil, 403)
+	all := decode[[]model.Submission](t, admin.request("GET", adminPath, nil, 200))
+	if len(all) != 3 || all[0].ID != adminSubmission.ID || !all[2].Withdrawn {
+		t.Fatalf("admin history must include all users and withdrawn submissions: %+v", all)
+	}
+	filtered := decode[[]model.Submission](t, admin.request("GET", fmt.Sprintf("%s?user_id=%d", adminPath, ownerUser.ID), nil, 200))
+	if len(filtered) != 2 {
+		t.Fatalf("admin user filter returned unexpected submissions: %+v", filtered)
+	}
+	for _, s := range filtered {
+		if s.UserID != ownerUser.ID {
+			t.Fatalf("admin user filter contains another user's submission: %+v", s)
+		}
+	}
+}

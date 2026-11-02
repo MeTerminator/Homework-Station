@@ -36,9 +36,11 @@ export function SubmissionHistory({
   const q = useData(async () => {
     if (recent)
       return api<Page<Submission>>(`/admin/submissions?page=${page}&size=${size}`);
-    const items = await api<Submission[]>(`/assignments/${assignmentID}/submissions`);
+    const items = await api<Submission[]>(
+      `${admin ? "/admin" : ""}/assignments/${assignmentID}/submissions`,
+    );
     return { items, total: items.length };
-  }, [assignmentID, page, size]);
+  }, [assignmentID, admin, page, size]);
   const [review, setReview] = useState<Submission | null>(null);
   const [selected, setSelected] = useState<Submission | null>(null);
   const [remove, setRemove] = useState<Submission | null>(null);
