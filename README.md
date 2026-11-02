@@ -241,6 +241,8 @@ HOMEWORK_NOTIFICATION_PATH=/homework/notifications
 HOMEWORK_NOTIFICATION_SECRET=替换为至少32字符的独立通知密钥
 # 多机器人时可指定发送账号；留空则在已连接 OneBot v11 机器人中优先查找好友，再尝试共同群临时私聊
 HOMEWORK_NOTIFICATION_BOT_ID=
+# Bot 可访问的平台后台根地址，结尾不带 /，不要包含 /admin 或 /api
+HOMEWORK_PLATFORM_URL=https://homework.example.com
 ```
 
 重新加载插件后，在管理后台 → 设置 → QQ 评论通知填写完整 API 地址，例如 `http://127.0.0.1:8080/homework/notifications`（部署时使用后端可访问的 NoneBot 地址），以及相同的通知 Secret。路径由插件配置监听，后台 URL 中的路径必须与其一致。通知密钥与绑定码密钥分别配置。外网连接应使用 HTTPS。
@@ -252,16 +254,27 @@ HOMEWORK_NOTIFICATION_BOT_ID=
 升级自动新增 `last_notified_at`（可空）、队列状态与用户开关字段。历史管理员评论的最后通知时间为空，并自动进入队列，配置完成后开始补发。成功发送才更新最后通知时间；跳过或失败不更新。评论时间在消息中按北京时间显示，发送内容为纯文本，避免将评论中的 CQ 码执行为机器人指令：
 
 ```text
-# Homework Comments
-Staff: 管理员用户名
-Time: 2026-11-02 08:00:00
-
+# 作业评论
+管理员用户名
 这里是评论内容
+
+回复此消息可在平台上进行回复
+2026-11-02 08:00:00
 ```
 
 管理员可在评价对话中查看最后通知时间、排队/跳过状态，点击“重新通知”将单条管理员评论重新入队。管理后台 → 设置中的“高危操作：重新发送所有评论通知”需要打开确认框、输入“重新发送所有评论通知”并再次点击确认；后端也校验确认文字和管理员权限。重发仍遵守用户开关、好友及共同群检查，已有最后通知时间会保留至下一次成功发送。
 
 通知接口为 `POST HOMEWORK_NOTIFICATION_PATH`，使用 `Authorization: Bearer <secret>`，JSON 请求包含 `review_id`、字符串 `qq`、纯文本 `message`。成功返回 `200 {"status":"sent"}`，非好友且无共同群返回 `200 {"status":"not_friend"}`，鉴权失败返回 401，请求无效返回 400，无可用机器人或发送失败返回 503。路由采用 [NoneBot 官方兼容层](https://nonebot.dev/docs/2.4.4/advanced/routing) 实现。
+
+### 在 QQ 中引用回复评论
+
+Bot 配置 `HOMEWORK_PLATFORM_URL` 为 Bot 可访问的平台后台根地址，例如 `https://homework.example.com` 或 `http://127.0.0.1:8080`，**结尾不带 `/`**，不要添加 `/admin`、`/api` 或查询参数。Bot 会自动拼接 `/api/bot/replies`。若使用前后端分离部署，请填写能访问后端 API 的地址。留空时不启用引用回复功能。凭据直接复用 `HOMEWORK_NOTIFICATION_SECRET`，必须与平台管理后台的 QQ 通知 Secret 完全一致，无需管理员账户密码或登录 Cookie。修改后重新加载插件。
+
+收到作业评论通知后，在 QQ 私聊中使用“回复/引用”功能选中该条通知，再发送文字。好友私聊和共同群临时私聊均可，群聊消息不会写入平台。成功后 Bot 提示“回复已发送到平台”，平台对应提交的评价对话将出现该账户的回复，提交状态按现有规则更新为待处理。当前只支持文字，图片和附件请到平台上传；直接私聊发送文字而不引用通知不会同步。
+
+平台会保存通知的机器人账号、QQ 消息 ID、接收 QQ 与原评论的关联，Bot 和平台重启后仍可引用回复。引用消息必须是升级后已记录关联的作业通知；升级前的通知需要在平台点击“重新通知”，再引用新消息。机器人需要支持 OneBot v11 发送结果中的 `message_id` 和引用消息查询（[`get_msg`](https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_msg-获取消息)）。Bot 的成功通知响应新增字符串 `bot_id`、`message_id`，供平台保存关联。
+
+回复接口为 `POST /api/bot/replies`，鉴权为同一 `Authorization: Bearer <通知 Secret>`；JSON 字段为字符串 `bot_id`、`qq`、`message_id`（本次回复消息 ID）、`reply_message_id`（引用通知 ID）和 `content`。平台同时校验原通知接收者、当前 QQ 绑定和提交归属，并沿用隐藏作业、已撤回提交及文本长度限制。重复上报同一 QQ 消息不会重复创建评论。未绑定、无权访问、原记录已删除等情况会返回失败原因；网络异常时 Bot 会提示到平台确认结果后再重试，避免重复发送。
 
 ## 附件存储与部署范围
 

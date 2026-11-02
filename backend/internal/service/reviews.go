@@ -52,12 +52,26 @@ func (svc *SubmissionService) Reviews(u model.User, id uint) ([]model.ReviewMess
 }
 
 func (svc *SubmissionService) CreateReview(u model.User, id uint, v SubmissionInput) (model.ReviewMessage, error) {
+	return svc.createReview(u, id, v, nil)
+}
+
+func (svc *SubmissionService) createReview(u model.User, id uint, v SubmissionInput, replyKey *string) (model.ReviewMessage, error) {
 	svc.files.MutationMu.Lock()
 	defer svc.files.MutationMu.Unlock()
 	var empty model.ReviewMessage
 	s, err := svc.reviewSubmission(u, id)
 	if err != nil {
 		return empty, err
+	}
+	if replyKey != nil {
+		var existing model.ReviewMessage
+		err := svc.db.Where("qq_reply_key = ?", *replyKey).First(&existing).Error
+		if err == nil {
+			return existing, nil
+		}
+		if err != gorm.ErrRecordNotFound {
+			return empty, Reject(500, "读取 QQ 回复失败")
+		}
 	}
 	if s.Withdrawn {
 		return empty, Reject(409, "已撤回的提交不能新增评价或回复")
@@ -95,7 +109,7 @@ func (svc *SubmissionService) CreateReview(u model.User, id uint, v SubmissionIn
 			}
 		}
 	}
-	m := model.ReviewMessage{SubmissionID: id, UserID: u.ID, Admin: u.Admin, Content: v.Content, Attachments: files}
+	m := model.ReviewMessage{SubmissionID: id, UserID: u.ID, Admin: u.Admin, Content: v.Content, Attachments: files, QQReplyKey: replyKey}
 	status := "pending"
 	if u.Admin {
 		status = "reviewed"

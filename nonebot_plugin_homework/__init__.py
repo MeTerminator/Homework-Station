@@ -1,4 +1,4 @@
-"""NoneBot2 + OneBot v11: private /绑定码 command."""
+"""NoneBot2 + OneBot v11: QQ binding, comment notifications and quoted replies."""
 
 from nonebot import get_driver, get_plugin_config, on_command
 from nonebot.adapters.onebot.v11 import PrivateMessageEvent
@@ -17,6 +17,7 @@ class Config(BaseModel):
     homework_notification_path: str = "/homework/notifications"
     homework_notification_secret: SecretStr = SecretStr("")
     homework_notification_bot_id: str = ""
+    homework_platform_url: str = ""
 
     @field_validator("homework_notification_bot_id", mode="before")
     @classmethod
@@ -66,3 +67,8 @@ if config.homework_notification_secret.get_secret_value():
     from .notifications import setup_notifications
 
     setup_notifications(get_driver(), config)
+
+if config.homework_platform_url:
+    from .replies import setup_replies
+
+    setup_replies(config)

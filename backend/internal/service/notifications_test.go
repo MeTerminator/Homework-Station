@@ -52,7 +52,7 @@ func TestNotificationQueue(t *testing.T) {
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			t.Error(err)
 		}
-		if body.QQ != qq || body.ReviewID != review.ID || body.Message != "# Homework Comments\nStaff: staff\nTime: 2026-11-02 08:00:00\n\n请修改 [CQ:at,qq=all]" {
+		if body.QQ != qq || body.ReviewID != review.ID || body.Message != "# 作业评论\nstaff\n请修改 [CQ:at,qq=all]\n\n回复此消息可在平台上进行回复\n2026-11-02 08:00:00" {
 			t.Errorf("unexpected payload: %+v", body)
 		}
 		if status == "error" {

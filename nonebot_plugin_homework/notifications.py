@@ -11,16 +11,23 @@ from nonebot.drivers import URL, ASGIMixin, HTTPServerSetup, Request, Response
 from nonebot.log import logger
 
 
-async def deliver_notification(bots: list[Bot], qq: str, message: str) -> str:
+async def deliver_notification(
+    bots: list[Bot], qq: str, message: str, receipt: dict | None = None
+) -> str:
+    def remember(bot, result):
+        if receipt is not None and isinstance(result, dict) and "message_id" in result:
+            receipt.update(bot_id=bot.self_id, message_id=str(result["message_id"]))
+
     failed = False
     # Prefer an existing friend connection across all eligible bot accounts.
     for bot in bots:
         try:
             friends = await bot.get_friend_list()
             if any(str(friend["user_id"]) == qq for friend in friends):
-                await bot.send_private_msg(
+                result = await bot.send_private_msg(
                     user_id=int(qq), message=message, auto_escape=True
                 )
+                remember(bot, result)
                 return "sent"
         except Exception:
             failed = True
@@ -43,13 +50,14 @@ async def deliver_notification(bots: list[Bot], qq: str, message: str) -> str:
                     continue
                 # group_id is an implementation extension for temporary sessions;
                 # call_api forwards it without relying on the adapter's type stub.
-                await bot.call_api(
+                result = await bot.call_api(
                     "send_private_msg",
                     user_id=int(qq),
                     group_id=group_id,
                     message=message,
                     auto_escape=True,
                 )
+                remember(bot, result)
                 return "sent"
             except Exception:
                 failed = True
@@ -73,10 +81,10 @@ def setup_notifications(driver, config) -> None:
         raise ValueError("评论通知需要支持 ASGI 的 NoneBot 驱动器")
     lock = asyncio.Lock()
 
-    def response(code: int, status: str) -> Response:
+    def response(code: int, status: str, **extra) -> Response:
         return Response(
             code,
-            content=json.dumps({"status": status}),
+            content=json.dumps({"status": status, **extra}),
             headers={"Content-Type": "application/json"},
         )
 
@@ -108,8 +116,11 @@ def setup_notifications(driver, config) -> None:
             ]
             if not bots:
                 return response(503, "bot_offline")
-            status = await deliver_notification(bots, qq, message)
-            return response(503 if status == "delivery_failed" else 200, status)
+            receipt = {}
+            status = await deliver_notification(bots, qq, message, receipt)
+            return response(
+                503 if status == "delivery_failed" else 200, status, **receipt
+            )
 
     driver.setup_http_server(
         HTTPServerSetup(

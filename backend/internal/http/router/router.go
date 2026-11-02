@@ -30,6 +30,7 @@ func New(h *handler.Handler, output *log.Logger, cfg config.Config) (*gin.Engine
 	r.POST("/api/register", limiter.Middleware(), h.Register)
 	r.POST("/api/login", limiter.Middleware(), h.Login)
 	r.POST("/api/logout", h.Logout)
+	r.POST("/api/bot/replies", middleware.NewRateLimiter().Middleware(), h.CreateQQReply)
 	a := r.Group("/api", middleware.Auth(h.DB, h.SessionSecret))
 	a.GET("/me", h.Me)
 	a.PATCH("/me", h.UpdateMe)

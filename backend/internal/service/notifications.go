@@ -116,7 +116,7 @@ func (s *NotificationService) ProcessNext(ctx context.Context, delay bool) error
 		author.Username = "已删除用户"
 	}
 	zone := time.FixedZone("Asia/Shanghai", 8*60*60)
-	message := fmt.Sprintf("# Homework Comments\nStaff: %s\nTime: %s\n\n%s", author.Username, m.CreatedAt.In(zone).Format("2006-01-02 15:04:05"), m.Content)
+	message := fmt.Sprintf("# 作业评论\n%s\n%s\n\n回复此消息可在平台上进行回复\n%s", author.Username, m.Content, m.CreatedAt.In(zone).Format("2006-01-02 15:04:05"))
 	payload, err := json.Marshal(map[string]interface{}{"review_id": m.ID, "qq": *user.QQ, "message": message})
 	if err != nil {
 		return err
@@ -131,11 +131,19 @@ func (s *NotificationService) ProcessNext(ctx context.Context, delay bool) error
 	if err == nil {
 		defer resp.Body.Close()
 		var result struct {
-			Status string `json:"status"`
+			Status    string `json:"status"`
+			BotID     string `json:"bot_id"`
+			MessageID string `json:"message_id"`
 		}
 		if resp.StatusCode == http.StatusOK && json.NewDecoder(io.LimitReader(resp.Body, 4096)).Decode(&result) == nil {
 			switch result.Status {
 			case "sent":
+				if result.BotID != "" && result.MessageID != "" {
+					link := model.QQNotification{BotID: result.BotID, MessageID: result.MessageID, QQ: *user.QQ, ReviewID: m.ID}
+					if err := s.db.Save(&link).Error; err != nil {
+						return err
+					}
+				}
 				return s.finish(m.ID, "sent", true)
 			case "not_friend":
 				return s.finish(m.ID, "skipped_not_friend", false)

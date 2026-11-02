@@ -50,7 +50,7 @@ class NotificationTests(unittest.IsolatedAsyncioTestCase):
         class FakeBot:
             self_id = "10000"
             get_friend_list = AsyncMock(return_value=[{"user_id": 123456789}])
-            send_private_msg = AsyncMock()
+            send_private_msg = AsyncMock(return_value={"message_id": -123})
             get_group_list = AsyncMock(return_value=[])
 
         bot = FakeBot()
@@ -62,6 +62,8 @@ class NotificationTests(unittest.IsolatedAsyncioTestCase):
                 {"qq": "123456789", "message": "[CQ:at,qq=all]"}
             )
             self.assertEqual(json.loads(response.content)["status"], "sent")
+            self.assertEqual(json.loads(response.content)["bot_id"], "10000")
+            self.assertEqual(json.loads(response.content)["message_id"], "-123")
             bot.get_group_list.assert_not_awaited()
             bot.send_private_msg.assert_awaited_once_with(
                 user_id=123456789, message="[CQ:at,qq=all]", auto_escape=True

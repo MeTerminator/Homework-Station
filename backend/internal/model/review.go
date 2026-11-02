@@ -4,6 +4,7 @@ import "time"
 
 // ReviewMessage belongs to one submission; Admin records the author's role at send time.
 type ReviewMessage struct {
+	QQReplyKey          *string      `json:"-" gorm:"uniqueIndex;size:128"`
 	LastNotifiedAt      *time.Time   `json:"last_notified_at"`
 	NotificationPending bool         `json:"notification_pending" gorm:"not null;default:true;index:idx_review_queue"`
 	NotificationNextAt  *time.Time   `json:"-"`
@@ -17,6 +18,14 @@ type ReviewMessage struct {
 	Attachments         []Attachment `json:"attachments" gorm:"many2many:review_attachments"`
 	Username            string       `json:"username" gorm:"-"`
 	AvatarID            *uint        `json:"avatar_id" gorm:"-"`
+}
+
+// QQNotification links a delivered private message to its original review.
+type QQNotification struct {
+	BotID     string `gorm:"primaryKey;size:20"`
+	MessageID string `gorm:"primaryKey;size:32"`
+	QQ        string `gorm:"not null;size:20"`
+	ReviewID  uint   `gorm:"not null;index"`
 }
 
 type ReviewAttachment struct {
